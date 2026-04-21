@@ -1,3 +1,4 @@
+from PIL.XVThumbImagePlugin import r
 from django.contrib import admin
 from django.urls import include, path
 from drf_spectacular.views import (
@@ -12,11 +13,12 @@ from rest_framework_simplejwt.views import (
     TokenVerifyView,
 )
 
-from core.views import UserRegistrationView, UserViewSet
+from core.views import UserRegistrationView, UserViewSet, PaiViewSet
 
 router = DefaultRouter()
 
 router.register(r'usuarios', UserViewSet, basename='usuarios')
+router.register(r'pais', PaiViewSet, basename='pais')
 
 urlpatterns = [
     path('admin/', admin.site.urls),
