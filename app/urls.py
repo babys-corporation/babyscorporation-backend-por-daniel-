@@ -13,14 +13,14 @@ from rest_framework_simplejwt.views import (
     TokenVerifyView,
 )
 
-from core.views import UserRegistrationView, UserViewSet, PaiViewSet, BabaViewSet
+from core.views import UserRegistrationView, UserViewSet, PaiViewSet, BabaViewSet, AgendamentoViewSet
 
 router = DefaultRouter()
 
 router.register(r'usuarios', UserViewSet, basename='usuarios')
 router.register(r'pais', PaiViewSet, basename='pais')
 router.register(r'baba', BabaViewSet, basename='baba')
-
+router.register(r'agendamento', AgendamentoViewSet, basename='agendamento')
 urlpatterns = [
     path('admin/', admin.site.urls),
     # OpenAPI 3
