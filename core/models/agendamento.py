@@ -1,6 +1,6 @@
 from django.db import models
 
-class Baba(models.Model):
+class Agendamento(models.Model):
     data = models.DateField()
     hora_inicio = models.TimeField()
     hora_fim = models.TimeField()
