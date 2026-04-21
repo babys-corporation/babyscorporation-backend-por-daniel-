@@ -53,3 +53,4 @@ class UserAdmin(BaseUserAdmin):
 
 admin.site.register(models.User, UserAdmin)
 admin.site.register(models.Pai)
+admin.site.register(models.Baba)
