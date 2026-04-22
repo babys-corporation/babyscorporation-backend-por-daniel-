@@ -40,8 +40,12 @@ class UserManager(BaseUserManager):
 class User(AbstractBaseUser, PermissionsMixin):
     """User model in the system."""
 
-    email = models.EmailField(max_length=255, unique=True, verbose_name=_('email'), help_text=_('Email'))
-    name = models.CharField(max_length=255, blank=True, null=True, verbose_name=_('name'), help_text=_('Username'))
+    id = models.AutoField(primary_key=True, db_column='iduser')
+    name = models.CharField(max_length=60, verbose_name=_('Digite seu nome'), help_text=_('Nome por favor'))
+    cpf = models.CharField(max_length=14, unique=True)
+    endereco = models.CharField(max_length=150)
+    celular = models.CharField(max_length=15, unique=True)
+    email = models.EmailField(max_length=255, unique=True, verbose_name=_('Digite seu email'), help_text=_('Digite o email coreto')) 
     is_active = models.BooleanField(
         default=True, verbose_name=_('Usuário está ativo'), help_text=_('Indica que este usuário está ativo.')
     )

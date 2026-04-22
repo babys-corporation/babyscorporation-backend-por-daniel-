@@ -13,7 +13,6 @@ from core.serializers import UserRegistrationSerializer, UserSerializer
 class UserViewSet(ModelViewSet):
     queryset = User.objects.all().order_by('id')
     serializer_class = UserSerializer
-    permission_classes = [IsAuthenticated]
 
     @extend_schema(
         summary="Dados do usuário autenticado",
