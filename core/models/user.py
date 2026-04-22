@@ -65,3 +65,5 @@ class User(AbstractBaseUser, PermissionsMixin):
 
         verbose_name = 'Usuário'
         verbose_name_plural = 'Usuários'
+
+
