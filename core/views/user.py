@@ -5,31 +5,35 @@ from rest_framework.generics import CreateAPIView
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet
-
-from core.models import User
-from core.serializers import UserRegistrationSerializer, UserSerializer
+from core.models import Usuario, PerfilPai, PerfilBaba
+from core.serializers import UserRegistrationSerializer, UserSerializer, PerfilPaiSerializer, PerfilBabaSerializer
 
 
 class UserViewSet(ModelViewSet):
-    queryset = User.objects.all().order_by('id')
+    queryset = Usuario.objects.all().order_by('id')
     serializer_class = UserSerializer
 
     @extend_schema(
         summary="Dados do usuário autenticado",
-        description="Retorna os dados do usuário autenticado.",
         responses={200: UserSerializer, 401: None},
     )
     @action(detail=False, methods=['get'], permission_classes=[IsAuthenticated])
     def me(self, request):
-        """ Retorna os dados do usuário autenticado."""
-        user = request.user
-        serializer = UserSerializer(user)
+        serializer = UserSerializer(request.user)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
 
 class UserRegistrationView(CreateAPIView):
-    """Endpoint para registro de novos usuários."""
-
-    queryset = User.objects.all()
+    queryset = Usuario.objects.all()
     serializer_class = UserRegistrationSerializer
     permission_classes = [AllowAny]
+
+
+class PerfilPaiViewSet(ModelViewSet):
+    queryset = PerfilPai.objects.all().order_by('id')
+    serializer_class = PerfilPaiSerializer
+
+
+class PerfilBabaViewSet(ModelViewSet):
+    queryset = PerfilBaba.objects.all().order_by('id')
+    serializer_class = PerfilBabaSerializer

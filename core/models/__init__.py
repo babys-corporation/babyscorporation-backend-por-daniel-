@@ -1,4 +1,2 @@
-from .user import User
-from .pai import Pai
-from .baba import Baba
+from .user import Usuario, PerfilPai, PerfilBaba
 from .agendamento import Agendamento

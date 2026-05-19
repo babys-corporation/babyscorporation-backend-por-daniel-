@@ -1,30 +1,23 @@
 from django.db import models
+from core.models.user import PerfilBaba, PerfilPai
 
-from core.models.baba import Baba
-
-from .pai import Pai
 
 class Agendamento(models.Model):
-
-    Idbaba = models.ForeignKey(
-
-       Baba,
+    baba = models.ForeignKey(
+        PerfilBaba,
         on_delete=models.PROTECT,
-        related_name='agendamento',
-        db_column='idbaba'
-
+        related_name='agendamentos',
     )
-    idpai = models.ForeignKey(
-
-       Pai,
+    pai = models.ForeignKey(
+        PerfilPai,
         on_delete=models.PROTECT,
-        related_name='agendamento',
-        db_column='idpai'
-
-     )
-
+        related_name='agendamentos',
+    )
     data = models.DateField()
     hora_inicio = models.TimeField()
     hora_fim = models.TimeField()
-    precoagendamento = models.DecimalField(max_digits=10, decimal_places=2)
-    qtdcriancas = models.IntegerField()
+    preco = models.DecimalField(max_digits=10, decimal_places=2)
+    qtd_criancas = models.IntegerField()
+
+    def __str__(self):
+        return f"Agendamento {self.pai} com {self.baba} em {self.data}"

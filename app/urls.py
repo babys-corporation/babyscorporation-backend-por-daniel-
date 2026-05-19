@@ -1,4 +1,3 @@
-from PIL.XVThumbImagePlugin import r
 from django.contrib import admin
 from django.urls import include, path
 from drf_spectacular.views import (
@@ -12,29 +11,20 @@ from rest_framework_simplejwt.views import (
     TokenRefreshView,
     TokenVerifyView,
 )
-
-from core.views import UserRegistrationView, UserViewSet, PaiViewSet, BabaViewSet, AgendamentoViewSet
+from core.views import UserRegistrationView, UserViewSet, PerfilPaiViewSet, PerfilBabaViewSet, AgendamentoViewSet
 
 router = DefaultRouter()
-
 router.register(r'usuarios', UserViewSet, basename='usuarios')
-router.register(r'pais', PaiViewSet, basename='pais')
-router.register(r'baba', BabaViewSet, basename='baba')
-router.register(r'agendamento', AgendamentoViewSet, basename='agendamento')
+router.register(r'perfil-pai', PerfilPaiViewSet, basename='perfil-pai')
+router.register(r'perfil-baba', PerfilBabaViewSet, basename='perfil-baba')
+router.register(r'agendamentos', AgendamentoViewSet, basename='agendamentos')
+
 urlpatterns = [
     path('admin/', admin.site.urls),
     # OpenAPI 3
     path('api/schema/', SpectacularAPIView.as_view(), name='schema'),
-    path(
-        'api/doc/',
-        SpectacularSwaggerView.as_view(url_name='schema'),
-        name='swagger-ui',
-    ),
-    path(
-        'api/redoc/',
-        SpectacularRedocView.as_view(url_name='schema'),
-        name='redoc',
-    ),
+    path('api/doc/', SpectacularSwaggerView.as_view(url_name='schema'), name='swagger-ui'),
+    path('api/redoc/', SpectacularRedocView.as_view(url_name='schema'), name='redoc'),
     # Autenticação JWT
     path('api/token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
     path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),

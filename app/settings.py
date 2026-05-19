@@ -141,7 +141,7 @@ SPECTACULAR_SETTINGS = {
 }
 
 # Modelo de usuário personalizado
-AUTH_USER_MODEL = 'core.User'
+AUTH_USER_MODEL = 'core.Usuario'
 
 # Configurações do Django REST Framework
 REST_FRAMEWORK = {
