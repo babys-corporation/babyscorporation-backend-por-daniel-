@@ -39,4 +39,5 @@ class PerfilPaiSerializer(ModelSerializer):
 class PerfilBabaSerializer(ModelSerializer):
     class Meta:
         model = PerfilBaba
-        fields = ['id', 'experiencia_anos', 'descricao', 'disponivel', 'valor_hora', 'habilidades', 'dtnasc', 'formacao', 'sobre']
+        fields = ['id', 'usuario' 'experiencia_anos', 'descricao', 'disponivel', 'valor_hora', 'habilidades', 'dtnasc', 'formacao', 'sobre']
+        depth = 1
