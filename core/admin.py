@@ -17,11 +17,11 @@ class UsuarioAdmin(BaseUserAdmin):
     )
     readonly_fields = ['last_login', 'date_joined']
     add_fieldsets = (
-        (None, {
-            'classes': ('wide',),
-            'fields': ('username', 'email', 'tipo', 'password1', 'password2', 'is_active', 'is_staff'),
-        }),
-    )
+    (None, {
+        'classes': ('wide',),
+        'fields': ('username', 'email', 'tipo', 'foto', 'telefone', 'password1', 'password2', 'is_active', 'is_staff'),
+    }),
+)
 
     def save_model(self, request, obj, form, change):
         super().save_model(request, obj, form, change)
@@ -36,10 +36,20 @@ class UsuarioAdmin(BaseUserAdmin):
 class PerfilPaiAdmin(admin.ModelAdmin):
     list_display = ['usuario', 'numero_filhos', 'endereco']
 
+    def formfield_for_foreignkey(self, db_field, request, **kwargs):
+        if db_field.name == 'usuario':
+            kwargs['queryset'] = Usuario.objects.filter(tipo=Usuario.TipoUsuario.PAI)
+        return super().formfield_for_foreignkey(db_field, request, **kwargs)
+
 
 @admin.register(PerfilBaba)
 class PerfilBabaAdmin(admin.ModelAdmin):
     list_display = ['usuario', 'experiencia_anos', 'disponivel', 'valor_hora']
+
+    def formfield_for_foreignkey(self, db_field, request, **kwargs):
+        if db_field.name == 'usuario':
+            kwargs['queryset'] = Usuario.objects.filter(tipo=Usuario.TipoUsuario.BABA)
+        return super().formfield_for_foreignkey(db_field, request, **kwargs)
 
 
 @admin.register(Agendamento)
