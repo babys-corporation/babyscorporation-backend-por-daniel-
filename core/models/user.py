@@ -1,4 +1,5 @@
 from django.contrib.auth.models import AbstractUser
+from django.core.exceptions import ValidationError
 from django.db import models
 
 
@@ -13,7 +14,11 @@ class Usuario(AbstractUser):
         default=TipoUsuario.PAI,
     )
     foto = models.ImageField(upload_to="usuarios/fotos/", null=True, blank=True)
-    telefone = models.CharField(max_length=20, null=True, blank=True)
+    telefone = models.CharField(max_length=20, null=False, blank=False, default='')
+
+    def clean(self):
+        if self.tipo == self.TipoUsuario.BABA and not self.foto:
+            raise ValidationError({'foto': 'Foto é obrigatória para babás.'})
 
     def __str__(self):
         nome = self.get_full_name()
@@ -44,8 +49,9 @@ class PerfilBaba(models.Model):
     disponivel = models.BooleanField(default=True)
     valor_hora = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
     habilidades = models.CharField(max_length=700, null=True, blank=True)
-    dtnasc = models.DateField(verbose_name=("Data de Nascimento"),null=True, blank=True)
+    dtnasc = models.DateField(verbose_name="Data de Nascimento", null=True, blank=True)
     formacao = models.CharField(max_length=700, null=True, blank=True)
+    sobre = models.TextField(null=True, blank=True)
 
     def __str__(self):
         return f"Perfil Babá - {self.usuario}"
