@@ -19,19 +19,18 @@ class Usuario(AbstractUser):
         nome = self.get_full_name()
         return f"{nome if nome else self.username} ({self.tipo})"
 
-
 class PerfilPai(models.Model):
     usuario = models.OneToOneField(
         Usuario,
         on_delete=models.CASCADE,
         related_name="perfil_pai",
     )
+    cpf = models.CharField(max_length=11, unique=True)
     numero_filhos = models.PositiveIntegerField(default=0)
     endereco = models.CharField(max_length=255, null=True, blank=True)
 
     def __str__(self):
         return f"Perfil Pai - {self.usuario}"
-
 
 class PerfilBaba(models.Model):
     usuario = models.OneToOneField(

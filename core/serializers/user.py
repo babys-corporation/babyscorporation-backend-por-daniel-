@@ -33,7 +33,7 @@ class UserRegistrationSerializer(ModelSerializer):
 class PerfilPaiSerializer(ModelSerializer):
     class Meta:
         model = PerfilPai
-        fields = ['id', 'numero_filhos', 'endereco']
+        fields = ['id','cpf', 'numero_filhos', 'endereco']
 
 
 class PerfilBabaSerializer(ModelSerializer):
