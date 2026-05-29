@@ -15,6 +15,7 @@ class Usuario(AbstractUser):
     foto = models.ImageField(upload_to="usuarios/fotos/", null=True, blank=True)
     telefone = models.CharField(max_length=20, null=True, blank=True)
 
+
     def __str__(self):
         nome = self.get_full_name()
         return f"{nome if nome else self.username} ({self.tipo})"
