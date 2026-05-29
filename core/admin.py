@@ -17,11 +17,11 @@ class UsuarioAdmin(BaseUserAdmin):
     )
     readonly_fields = ['last_login', 'date_joined']
     add_fieldsets = (
-    (None, {
-        'classes': ('wide',),
-        'fields': ('username', 'email', 'tipo', 'foto', 'telefone', 'password1', 'password2', 'is_active', 'is_staff'),
-    }),
-)
+        (None, {
+            'classes': ('wide',),
+            'fields': ('username', 'email', 'first_name', 'last_name', 'tipo', 'foto', 'telefone', 'password1', 'password2', 'is_active', 'is_staff'),
+        }),
+    )
 
     def save_model(self, request, obj, form, change):
         super().save_model(request, obj, form, change)
