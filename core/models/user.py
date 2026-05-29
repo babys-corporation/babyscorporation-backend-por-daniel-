@@ -1,6 +1,7 @@
 from django.contrib.auth.models import AbstractUser
 from django.core.exceptions import ValidationError
 from django.db import models
+from uploader.models import Image
 
 
 class Usuario(AbstractUser):
@@ -13,7 +14,14 @@ class Usuario(AbstractUser):
         choices=TipoUsuario.choices,
         default=TipoUsuario.PAI,
     )
-    foto = models.ImageField(upload_to="usuarios/fotos/", null=True, blank=True)
+    foto = models.ForeignKey(
+        Image,
+        related_name='+',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        default=None,
+    )
     telefone = models.CharField(max_length=20, null=False, blank=False, default='')
 
     def clean(self):
@@ -51,6 +59,7 @@ class PerfilBaba(models.Model):
     habilidades = models.CharField(max_length=700, null=True, blank=True)
     dtnasc = models.DateField(verbose_name="Data de Nascimento", null=True, blank=True)
     formacao = models.CharField(max_length=700, null=True, blank=True)
+    sobre = models.TextField(null=True, blank=True)
 
     def __str__(self):
         return f"Perfil Babá - {self.usuario}"

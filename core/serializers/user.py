@@ -1,13 +1,24 @@
 from rest_framework import serializers
-from rest_framework.serializers import ModelSerializer
+from rest_framework.serializers import ModelSerializer, SlugRelatedField
 from rest_framework_simplejwt.tokens import RefreshToken
 from core.models import Usuario, PerfilPai, PerfilBaba
+from uploader.models import Image
+from uploader.serializers import ImageSerializer
 
 
 class UserSerializer(ModelSerializer):
+    foto_attachment_key = SlugRelatedField(
+        source='foto',
+        queryset=Image.objects.all(),
+        slug_field='attachment_key',
+        required=False,
+        write_only=True,
+    )
+    foto = ImageSerializer(required=False, read_only=True)
+
     class Meta:
         model = Usuario
-        fields = ['id', 'username', 'first_name', 'last_name', 'email', 'tipo', 'foto', 'telefone', 'is_active', 'is_staff']
+        fields = ['id', 'username', 'first_name', 'last_name', 'email', 'tipo', 'foto', 'foto_attachment_key', 'telefone', 'is_active', 'is_staff']
         read_only_fields = ['id', 'is_active', 'is_staff']
 
 
@@ -15,10 +26,17 @@ class UserRegistrationSerializer(ModelSerializer):
     password = serializers.CharField(write_only=True, min_length=8)
     access = serializers.SerializerMethodField(read_only=True)
     refresh = serializers.SerializerMethodField(read_only=True)
+    foto_attachment_key = SlugRelatedField(
+        source='foto',
+        queryset=Image.objects.all(),
+        slug_field='attachment_key',
+        required=False,
+        write_only=True,
+    )
 
     class Meta:
         model = Usuario
-        fields = ['id', 'username', 'email', 'password', 'tipo', 'access', 'refresh']
+        fields = ['id', 'username', 'email', 'password', 'tipo', 'foto_attachment_key', 'access', 'refresh']
 
     def create(self, validated_data):
         return Usuario.objects.create_user(**validated_data)
