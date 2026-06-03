@@ -41,6 +41,8 @@ INSTALLED_APPS = [
     'rest_framework',
     'uploader',
     'core',
+    'django_cpf_cnpj',
+    'phonenumber_field',
 ]
 
 MIDDLEWARE = [

@@ -1,17 +1,31 @@
+from django import forms
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 from django.utils.translation import gettext_lazy as _
 from core.models import Usuario, PerfilPai, PerfilBaba, Agendamento
 
 
+class UsuarioAdminForm(forms.ModelForm):
+    class Meta:
+        model = Usuario
+        fields = '__all__'
+        widgets = {
+            'cpf': forms.TextInput(attrs={
+                'placeholder': '000.000.000-00',
+                'maxlength': '14',
+            }),
+        }
+
+
 @admin.register(Usuario)
 class UsuarioAdmin(BaseUserAdmin):
+    form = UsuarioAdminForm
     ordering = ['id']
     list_display = ['username', 'email', 'first_name', 'last_name', 'tipo', 'is_staff']
     list_filter = ['tipo', 'is_staff', 'is_active']
     fieldsets = (
         (None, {'fields': ('username', 'password')}),
-        (_('Informações pessoais'), {'fields': ('first_name', 'last_name', 'email', 'tipo', 'foto', 'telefone')}),
+        (_('Informações pessoais'), {'fields': ('first_name', 'last_name', 'email', 'cpf', 'tipo', 'foto', 'telefone')}),
         (_('Permissões'), {'fields': ('is_active', 'is_staff', 'is_superuser', 'groups', 'user_permissions')}),
         (_('Datas importantes'), {'fields': ('last_login', 'date_joined')}),
     )
@@ -19,7 +33,7 @@ class UsuarioAdmin(BaseUserAdmin):
     add_fieldsets = (
         (None, {
             'classes': ('wide',),
-            'fields': ('username', 'email', 'first_name', 'last_name', 'tipo', 'foto', 'telefone', 'password1', 'password2', 'is_active', 'is_staff'),
+            'fields': ('username', 'email', 'first_name', 'last_name', 'cpf', 'tipo', 'foto', 'telefone', 'password1', 'password2', 'is_active', 'is_staff'),
         }),
     )
 

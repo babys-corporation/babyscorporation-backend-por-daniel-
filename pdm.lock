@@ -5,7 +5,7 @@
 groups = ["default", "dev"]
 strategy = ["inherit_metadata"]
 lock_version = "4.5.0"
-content_hash = "sha256:9a3b201f6eebb039464e1e866011e2e235c2f2b7d05772fc93bb9e1c682dc23e"
+content_hash = "sha256:cc2946e7790e4feb68760b09d3f603693cb7fa320cf4f55559bc4c391ab25b73"
 
 [[metadata.targets]]
 requires_python = ">=3.10"
@@ -381,6 +381,19 @@ files = [
 ]
 
 [[package]]
+name = "django-cpf-cnpj"
+version = "1.0.0"
+requires_python = ">=3.6"
+summary = "A django model and form field for normalised cpf and cnpj."
+groups = ["default"]
+dependencies = [
+    "Django>=2.2",
+]
+files = [
+    {file = "django_cpf_cnpj-1.0.0-py3-none-any.whl", hash = "sha256:9e3400b8181d9f4dd99ebd5d3c2d127d1180cb9a4e5448145f6904629c61ad12"},
+]
+
+[[package]]
 name = "django-extensions"
 version = "4.1"
 requires_python = ">=3.9"
@@ -406,6 +419,20 @@ dependencies = [
 files = [
     {file = "django_filter-25.2-py3-none-any.whl", hash = "sha256:9c0f8609057309bba611062fe1b720b4a873652541192d232dd28970383633e3"},
     {file = "django_filter-25.2.tar.gz", hash = "sha256:760e984a931f4468d096f5541787efb8998c61217b73006163bf2f9523fe8f23"},
+]
+
+[[package]]
+name = "django-phonenumber-field"
+version = "8.4.0"
+requires_python = ">=3.10"
+summary = "An international phone number field for django models."
+groups = ["default"]
+dependencies = [
+    "Django>=4.2",
+]
+files = [
+    {file = "django_phonenumber_field-8.4.0-py3-none-any.whl", hash = "sha256:7a1cb3a6456edb54d879f11ffa0acb227ded08c93b587035d0f28093f0e46511"},
+    {file = "django_phonenumber_field-8.4.0.tar.gz", hash = "sha256:2b83e843dac35eec6a69880a166487235b737a71a1e38c9a52e5ad67d6996083"},
 ]
 
 [[package]]
@@ -703,6 +730,17 @@ dependencies = [
 files = [
     {file = "pexpect-4.9.0-py2.py3-none-any.whl", hash = "sha256:7236d1e080e4936be2dc3e326cec0af72acf9212a7e1d060210e70a47e253523"},
     {file = "pexpect-4.9.0.tar.gz", hash = "sha256:ee7d41123f3c9911050ea2c2dac107568dc43b2d3b0c7557a33212c398ead30f"},
+]
+
+[[package]]
+name = "phonenumbers"
+version = "9.0.31"
+requires_python = ">=2.5"
+summary = "Python version of Google's common library for parsing, formatting, storing and validating international phone numbers."
+groups = ["default"]
+files = [
+    {file = "phonenumbers-9.0.31-py2.py3-none-any.whl", hash = "sha256:f308c1f425e2637b92ff34a174f0888ddf47aacfa6199531f7097e00ad90f57c"},
+    {file = "phonenumbers-9.0.31.tar.gz", hash = "sha256:287dbd012b12cf9bcc4803b55a29e0d204db5a0df747d38c9130fee1b1b6b0aa"},
 ]
 
 [[package]]
