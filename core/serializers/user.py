@@ -52,6 +52,7 @@ class PerfilPaiSerializer(ModelSerializer):
     class Meta:
         model = PerfilPai
         fields = ['id', 'numero_filhos', 'endereco']
+        septh =1
 
 
 class PerfilBabaSerializer(ModelSerializer):
