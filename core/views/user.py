@@ -40,7 +40,22 @@ class PerfilPaiViewSet(ModelViewSet):
     queryset = PerfilPai.objects.all().order_by('id')
     serializer_class = PerfilPaiSerializer
 
+    def perform_create(self, serializer):
+        PerfilPai.objects.get_or_create(
+            usuario=self.request.user,
+            defaults={
+                'numero_filhos': serializer.validated_data.get('numero_filhos', 0),
+                'endereco': serializer.validated_data.get('endereco', ''),
+            }
+        )
+
 
 class PerfilBabaViewSet(ModelViewSet):
     queryset = PerfilBaba.objects.all().order_by('id')
     serializer_class = PerfilBabaSerializer
+from rest_framework.exceptions import ValidationError
+
+def perform_create(self, serializer):
+    if PerfilBaba.objects.filter(usuario=self.request.user).exists():
+        raise ValidationError({'detail': 'Perfil de babá já existe para este usuário.'})
+    serializer.save(usuario=self.request.user)

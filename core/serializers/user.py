@@ -34,9 +34,13 @@ class UserRegistrationSerializer(ModelSerializer):
         write_only=True,
     )
 
-    class Meta:
+    class Meta:                          # ← dentro da classe
         model = Usuario
-        fields = ['id', 'username', 'email', 'password', 'tipo', 'foto_attachment_key', 'access', 'refresh']
+        fields = [
+            'id', 'username', 'first_name', 'last_name',
+            'email', 'password', 'tipo', 'foto_attachment_key',
+            'access', 'refresh'
+        ]
 
     def create(self, validated_data):
         return Usuario.objects.create_user(**validated_data)
@@ -51,8 +55,9 @@ class UserRegistrationSerializer(ModelSerializer):
 class PerfilPaiSerializer(ModelSerializer):
     class Meta:
         model = PerfilPai
-        fields = ['id', 'numero_filhos', 'endereco']
-        septh =1
+        fields = ['id', 'usuario', 'numero_filhos', 'endereco']
+        read_only_fields = ['usuario']
+        depth = 1
 
 
 class PerfilBabaSerializer(ModelSerializer):
