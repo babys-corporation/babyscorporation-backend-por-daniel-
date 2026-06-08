@@ -1,5 +1,6 @@
 from drf_spectacular.utils import extend_schema
 from rest_framework import status
+from rest_framework.decorators import validationError
 from rest_framework.decorators import action
 from rest_framework.generics import CreateAPIView
 from rest_framework.parsers import FormParser, MultiPartParser
@@ -40,7 +41,21 @@ class PerfilPaiViewSet(ModelViewSet):
     queryset = PerfilPai.objects.all().order_by('id')
     serializer_class = PerfilPaiSerializer
 
+    def perform_create(self, serializer):
+        PerfilPai.objects.get_or_create(
+            usuario=self.request.user,
+            defaults={
+                'numero_filhos': serializer.validated_data.get('numero_filhos', 0),
+                'endereco': serializer.validated_data.get('endereco', ''),
+            }
+        )
+
 
 class PerfilBabaViewSet(ModelViewSet):
     queryset = PerfilBaba.objects.all().order_by('id')
     serializer_class = PerfilBabaSerializer
+
+    def perform_create(self, serializer):
+        if PerfilBaba.objects.filter(usuario=self.request.user).exists():
+            raise validationError('detail': 'perfil de baba já existe para este usuário.')
+        serializer.save(usuario=self.request.user)
