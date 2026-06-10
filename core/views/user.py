@@ -1,6 +1,6 @@
 from drf_spectacular.utils import extend_schema
 from rest_framework import status
-from rest_framework.decorators import validationError
+from rest_framework.exceptions import ValidationError
 from rest_framework.decorators import action
 from rest_framework.generics import CreateAPIView
 from rest_framework.parsers import FormParser, MultiPartParser
@@ -57,5 +57,5 @@ class PerfilBabaViewSet(ModelViewSet):
 
     def perform_create(self, serializer):
         if PerfilBaba.objects.filter(usuario=self.request.user).exists():
-            raise validationError('detail': 'perfil de baba já existe para este usuário.')
+            raise validationError('detail' 'perfil de baba já existe para este usuário.')
         serializer.save(usuario=self.request.user)
