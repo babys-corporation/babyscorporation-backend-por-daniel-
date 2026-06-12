@@ -6,7 +6,6 @@ from phonenumber_field.modelfields import PhoneNumberField
 from uploader.models import Image
 
 
-
 class Usuario(AbstractUser):
     class TipoUsuario(models.TextChoices):
         PAI = "PAI", "Pai/Mãe"
@@ -30,6 +29,7 @@ class Usuario(AbstractUser):
     cep = models.CharField(max_length=9, null=True, blank=True)
     cidade = models.CharField(max_length=255, null=True, blank=True)
     bairro = models.CharField(max_length=255, null=True, blank=True)
+
     def clean(self):
         if self.tipo == self.TipoUsuario.BABA and not self.foto:
             raise ValidationError({'foto': 'Foto é obrigatória para babás.'})
@@ -46,8 +46,6 @@ class PerfilPai(models.Model):
         related_name="perfil_pai",
     )
     numero_filhos = models.PositiveIntegerField(default=0)
-
-
 
     def __str__(self):
         return f"Perfil Pai - {self.usuario}"
@@ -69,3 +67,24 @@ class PerfilBaba(models.Model):
 
     def __str__(self):
         return f"Perfil Babá - {self.usuario}"
+
+
+class Crianca(models.Model):
+    class Genero(models.TextChoices):
+        MASCULINO = "M", "Masculino"
+        FEMININO = "F", "Feminino"
+        OUTRO = "O", "Outro"
+
+    perfil_pai = models.ForeignKey(
+        PerfilPai,
+        on_delete=models.CASCADE,
+        related_name="criancas",
+    )
+    nome = models.CharField(max_length=255)
+    genero = models.CharField(max_length=1, choices=Genero.choices)
+    idade = models.PositiveIntegerField()
+    alergias = models.TextField(null=True, blank=True)
+    condicoes = models.TextField(null=True, blank=True, verbose_name="Condições físicas/mentais")
+
+    def __str__(self):
+        return f"{self.nome} - filho de {self.perfil_pai.usuario}"

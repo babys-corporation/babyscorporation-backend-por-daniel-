@@ -7,8 +7,8 @@ from rest_framework.parsers import FormParser, MultiPartParser
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet
-from core.models import Usuario, PerfilPai, PerfilBaba
-from core.serializers import UserRegistrationSerializer, UserSerializer, PerfilPaiSerializer, PerfilBabaSerializer
+from core.models import Usuario, PerfilPai, PerfilBaba, Crianca
+from core.serializers import UserRegistrationSerializer, UserSerializer, PerfilPaiSerializer, PerfilBabaSerializer, CriancaSerializer
 
 
 class UserViewSet(ModelViewSet):
@@ -46,7 +46,6 @@ class PerfilPaiViewSet(ModelViewSet):
             usuario=self.request.user,
             defaults={
                 'numero_filhos': serializer.validated_data.get('numero_filhos', 0),
-                'endereco': serializer.validated_data.get('endereco', ''),
             }
         )
 
@@ -57,5 +56,14 @@ class PerfilBabaViewSet(ModelViewSet):
 
     def perform_create(self, serializer):
         if PerfilBaba.objects.filter(usuario=self.request.user).exists():
-            raise validationError('detail' 'perfil de baba já existe para este usuário.')
+            raise ValidationError({'detail': 'Perfil de babá já existe para este usuário.'})
         serializer.save(usuario=self.request.user)
+
+
+class CriancaViewSet(ModelViewSet):
+    queryset = Crianca.objects.all().order_by('id')
+    serializer_class = CriancaSerializer
+
+    def perform_create(self, serializer):
+        perfil_pai = PerfilPai.objects.get(usuario=self.request.user)
+        serializer.save(perfil_pai=perfil_pai)

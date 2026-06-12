@@ -2,7 +2,7 @@ import requests
 from rest_framework import serializers
 from rest_framework.serializers import ModelSerializer, SlugRelatedField
 from rest_framework_simplejwt.tokens import RefreshToken
-from core.models import Usuario, PerfilPai, PerfilBaba
+from core.models import Usuario, PerfilPai, PerfilBaba, Crianca
 from uploader.models import Image
 from uploader.serializers import ImageSerializer
 
@@ -67,10 +67,18 @@ class UserRegistrationSerializer(ModelSerializer):
         return str(RefreshToken.for_user(obj))
 
 
+class CriancaSerializer(ModelSerializer):
+    class Meta:
+        model = Crianca
+        fields = ['id', 'nome', 'genero', 'idade', 'alergias', 'condicoes']
+
+
 class PerfilPaiSerializer(ModelSerializer):
+    criancas = CriancaSerializer(many=True, read_only=True)
+
     class Meta:
         model = PerfilPai
-        fields = ['id', 'numero_filhos', 'endereco']
+        fields = ['id', 'numero_filhos', 'criancas']
 
 
 class PerfilBabaSerializer(ModelSerializer):

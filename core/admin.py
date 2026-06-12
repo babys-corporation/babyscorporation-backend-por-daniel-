@@ -3,7 +3,7 @@ from django import forms
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 from django.utils.translation import gettext_lazy as _
-from core.models import Usuario, PerfilPai, PerfilBaba, Agendamento
+from core.models import Usuario, PerfilPai, PerfilBaba, Agendamento, Crianca
 
 
 class UsuarioAdminForm(forms.ModelForm):
@@ -73,6 +73,16 @@ class PerfilBabaAdmin(admin.ModelAdmin):
     def formfield_for_foreignkey(self, db_field, request, **kwargs):
         if db_field.name == 'usuario':
             kwargs['queryset'] = Usuario.objects.filter(tipo=Usuario.TipoUsuario.BABA)
+        return super().formfield_for_foreignkey(db_field, request, **kwargs)
+
+
+@admin.register(Crianca)
+class CriancaAdmin(admin.ModelAdmin):
+    list_display = ['nome', 'genero', 'idade', 'perfil_pai']
+
+    def formfield_for_foreignkey(self, db_field, request, **kwargs):
+        if db_field.name == 'perfil_pai':
+            kwargs['queryset'] = PerfilPai.objects.all()
         return super().formfield_for_foreignkey(db_field, request, **kwargs)
 
 

@@ -13,6 +13,7 @@ from rest_framework_simplejwt.views import (
     TokenRefreshView,
     TokenVerifyView,
 )
+from core.views.user import CriancaViewSet
 from uploader.router import router as uploader_router
 from core.views import UserRegistrationView, UserViewSet, PerfilPaiViewSet, PerfilBabaViewSet, AgendamentoViewSet
 
@@ -21,6 +22,7 @@ router.register(r'usuarios', UserViewSet, basename='usuarios')
 router.register(r'perfil-pai', PerfilPaiViewSet, basename='perfil-pai')
 router.register(r'perfil-baba', PerfilBabaViewSet, basename='perfil-baba')
 router.register(r'agendamentos', AgendamentoViewSet, basename='agendamentos')
+router.register(r'criancas', CriancaViewSet, basename='criancas')
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -33,6 +35,7 @@ urlpatterns = [
     path('api/registro/', UserRegistrationView.as_view(), name='user_registration'),
     path('api/media/', include(uploader_router.urls)),
     path('api/', include(router.urls)),
+    
 ]
 
 urlpatterns += static(settings.MEDIA_ENDPOINT, document_root=settings.MEDIA_ROOT)
