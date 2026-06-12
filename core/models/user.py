@@ -6,6 +6,7 @@ from phonenumber_field.modelfields import PhoneNumberField
 from uploader.models import Image
 
 
+
 class Usuario(AbstractUser):
     class TipoUsuario(models.TextChoices):
         PAI = "PAI", "Pai/Mãe"
@@ -26,7 +27,9 @@ class Usuario(AbstractUser):
     )
     cpf = CPFField(null=True, blank=True, unique=True)
     telefone = PhoneNumberField(null=True, blank=True, region='BR')
-
+    cep = models.CharField(max_length=9, null=True, blank=True)
+    cidade = models.CharField(max_length=255, null=True, blank=True)
+    bairro = models.CharField(max_length=255, null=True, blank=True)
     def clean(self):
         if self.tipo == self.TipoUsuario.BABA and not self.foto:
             raise ValidationError({'foto': 'Foto é obrigatória para babás.'})
@@ -43,7 +46,6 @@ class PerfilPai(models.Model):
         related_name="perfil_pai",
     )
     numero_filhos = models.PositiveIntegerField(default=0)
-    endereco = models.CharField(max_length=255, null=True, blank=True)
 
 
 

@@ -1,3 +1,4 @@
+import requests
 from django import forms
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
@@ -26,18 +27,27 @@ class UsuarioAdmin(BaseUserAdmin):
     fieldsets = (
         (None, {'fields': ('username', 'password')}),
         (_('Informações pessoais'), {'fields': ('first_name', 'last_name', 'email', 'cpf', 'tipo', 'foto', 'telefone')}),
+        (_('Localização'), {'fields': ('cep', 'cidade', 'bairro')}),
         (_('Permissões'), {'fields': ('is_active', 'is_staff', 'is_superuser', 'groups', 'user_permissions')}),
         (_('Datas importantes'), {'fields': ('last_login', 'date_joined')}),
     )
-    readonly_fields = ['last_login', 'date_joined']
+    readonly_fields = ['last_login', 'date_joined', 'cidade', 'bairro']
     add_fieldsets = (
         (None, {
             'classes': ('wide',),
-            'fields': ('username', 'email', 'first_name', 'last_name', 'cpf', 'tipo', 'foto', 'telefone', 'password1', 'password2', 'is_active', 'is_staff'),
+            'fields': ('username', 'email', 'first_name', 'last_name', 'cpf', 'tipo', 'foto', 'telefone', 'cep', 'password1', 'password2', 'is_active', 'is_staff'),
         }),
     )
 
     def save_model(self, request, obj, form, change):
+        cep = obj.cep
+        if cep:
+            cep_limpo = cep.replace('-', '').strip()
+            r = requests.get(f"https://viacep.com.br/ws/{cep_limpo}/json/")
+            dados = r.json()
+            if 'erro' not in dados:
+                obj.cidade = dados['localidade']
+                obj.bairro = dados['bairro']
         super().save_model(request, obj, form, change)
         if not change:
             if obj.tipo == Usuario.TipoUsuario.PAI:
@@ -48,7 +58,7 @@ class UsuarioAdmin(BaseUserAdmin):
 
 @admin.register(PerfilPai)
 class PerfilPaiAdmin(admin.ModelAdmin):
-    list_display = ['usuario', 'numero_filhos', 'endereco']
+    list_display = ['usuario', 'numero_filhos']
 
     def formfield_for_foreignkey(self, db_field, request, **kwargs):
         if db_field.name == 'usuario':
