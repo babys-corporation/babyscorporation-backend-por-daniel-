@@ -1,10 +1,10 @@
+import requests
 from rest_framework import serializers
 from rest_framework.serializers import ModelSerializer, SlugRelatedField
 from rest_framework_simplejwt.tokens import RefreshToken
 from core.models import Usuario, PerfilPai, PerfilBaba
 from uploader.models import Image
 from uploader.serializers import ImageSerializer
-import requests
 
 
 class UserSerializer(ModelSerializer):
@@ -22,22 +22,25 @@ class UserSerializer(ModelSerializer):
         fields = ['id', 'username', 'first_name', 'last_name', 'email', 'tipo', 'foto', 'foto_attachment_key', 'telefone', 'is_active', 'is_staff', 'cpf', 'cep', 'cidade', 'bairro']
         read_only_fields = ['id', 'is_active', 'is_staff', 'cidade', 'bairro']
 
-
-def validate_cep(self, value):
-    cep = value.replace('-', '').strip()
-    r = requests.get(f"https://viacep.com.br/ws/{cep}/json/")
-    dados = r.json()
-    if 'erro' in dados:
-        raise serializers.ValidationError("CEP inválido.")
-    return value
-
-def update(self, instance, validated_data):
-    if cep:
+    def validate_cep(self, value):
+        cep = value.replace('-', '').strip()
         r = requests.get(f"https://viacep.com.br/ws/{cep}/json/")
         dados = r.json()
-        validated_data['cidade'] = dados('localidade')
-        validated_data['bairro'] = dados('bairro')
-    return super().update(instance, validated_data)
+        if 'erro' in dados:
+            raise serializers.ValidationError("CEP inválido.")
+        return cep
+
+    def update(self, instance, validated_data):
+        cep = validated_data.get('cep')
+        if cep:
+            r = requests.get(f"https://viacep.com.br/ws/{cep}/json/")
+            dados = r.json()
+            if 'erro' not in dados:
+                validated_data['cidade'] = dados['localidade']
+                validated_data['bairro'] = dados['bairro']
+        return super().update(instance, validated_data)
+
+
 class UserRegistrationSerializer(ModelSerializer):
     password = serializers.CharField(write_only=True, min_length=8)
     access = serializers.SerializerMethodField(read_only=True)
@@ -73,5 +76,5 @@ class PerfilPaiSerializer(ModelSerializer):
 class PerfilBabaSerializer(ModelSerializer):
     class Meta:
         model = PerfilBaba
-        fields = ['id', 'usuario', 'experiencia_anos', 'descricao', 'disponivel', 'valor_hora', 'habilidades', 'dtnasc', 'formacao',]
+        fields = ['id', 'usuario', 'experiencia_anos', 'descricao', 'disponivel', 'valor_hora', 'habilidades', 'dtnasc', 'formacao']
         depth = 2
