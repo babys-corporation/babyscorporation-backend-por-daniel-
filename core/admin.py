@@ -4,6 +4,7 @@ from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 from django.utils.translation import gettext_lazy as _
 from core.models import Usuario, PerfilPai, PerfilBaba, Agendamento, Crianca
+from core.models import Avaliacao
 
 
 class UsuarioAdminForm(forms.ModelForm):
@@ -89,3 +90,10 @@ class CriancaAdmin(admin.ModelAdmin):
 @admin.register(Agendamento)
 class AgendamentoAdmin(admin.ModelAdmin):
     list_display = ['pai', 'baba', 'data', 'hora_inicio', 'hora_fim']
+
+
+@admin.register(Avaliacao)
+class AvaliacaoAdmin(admin.ModelAdmin):
+    list_display = ['pai', 'baba', 'estrelas', 'criado_em']
+    list_filter = ['estrelas']
+    ordering = ['-criado_em']

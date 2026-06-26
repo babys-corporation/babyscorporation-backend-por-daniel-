@@ -16,11 +16,13 @@ from rest_framework_simplejwt.views import (
 from core.views.user import CriancaViewSet
 from uploader.router import router as uploader_router
 from core.views import UserRegistrationView, UserViewSet, PerfilPaiViewSet, PerfilBabaViewSet, AgendamentoViewSet
+from core.views.avaliacao import AvaliacaoViewSet
 
 router = DefaultRouter()
 router.register(r'usuarios', UserViewSet, basename='usuarios')
 router.register(r'perfil-pai', PerfilPaiViewSet, basename='perfil-pai')
 router.register(r'perfil-baba', PerfilBabaViewSet, basename='perfil-baba')
+router.register(r'avaliacoes', AvaliacaoViewSet, basename='avaliacoes')
 router.register(r'agendamentos', AgendamentoViewSet, basename='agendamentos')
 router.register(r'criancas', CriancaViewSet, basename='criancas')
 
