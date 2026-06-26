@@ -5,7 +5,7 @@
 groups = ["default", "dev"]
 strategy = ["inherit_metadata"]
 lock_version = "4.5.0"
-content_hash = "sha256:5f9f6e1a9446c5b2afbefca725f89865d270f6a9601ae68df1829b5f54727aad"
+content_hash = "sha256:c4a5a279a6cdffc11f242ec8f53b1853aaf11b77ddfbd881ef04dad2ef854cda"
 
 [[metadata.targets]]
 requires_python = ">=3.10"
@@ -429,6 +429,22 @@ summary = "An international phone number field for django models."
 groups = ["default"]
 dependencies = [
     "Django>=4.2",
+]
+files = [
+    {file = "django_phonenumber_field-8.4.0-py3-none-any.whl", hash = "sha256:7a1cb3a6456edb54d879f11ffa0acb227ded08c93b587035d0f28093f0e46511"},
+    {file = "django_phonenumber_field-8.4.0.tar.gz", hash = "sha256:2b83e843dac35eec6a69880a166487235b737a71a1e38c9a52e5ad67d6996083"},
+]
+
+[[package]]
+name = "django-phonenumber-field"
+version = "8.4.0"
+extras = ["phonenumbers"]
+requires_python = ">=3.10"
+summary = "An international phone number field for django models."
+groups = ["default"]
+dependencies = [
+    "django-phonenumber-field==8.4.0",
+    "phonenumbers>=7.0.2",
 ]
 files = [
     {file = "django_phonenumber_field-8.4.0-py3-none-any.whl", hash = "sha256:7a1cb3a6456edb54d879f11ffa0acb227ded08c93b587035d0f28093f0e46511"},
