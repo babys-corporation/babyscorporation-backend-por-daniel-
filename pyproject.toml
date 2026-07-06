@@ -4,7 +4,7 @@ version = "1.0.0"
 description = "Uma API REST de uma livraria feita com Django e Django REST Framework."
 authors = [{ name = "Marco André Mendes", email = "marcoandre@gmail.com" }]
 dependencies = [
-  'dj-database-url>=2.1.0',
+  "dj-database-url>=3.1.2",
   'django-cloudinary-storage>=0.3.0',
   'django-cors-headers>=4.3.0',
   'django-extensions>=3.2.3',
@@ -15,7 +15,7 @@ dependencies = [
   'gunicorn>=21.2.0',
   # 'mysqlclient>=2.2.4',
   "djangorestframework-simplejwt>=5.5.1",
-  'Pillow>=10.3.0',
+  "Pillow>=12.2.0",
   'pre-commit>=3.5.0',
   'psycopg2-binary>=2.9.9',
   'pydotplus>=2.0.2',
@@ -25,6 +25,10 @@ dependencies = [
   'setuptools>=68.2.2',
   'uvicorn>=0.29.0',
   'whitenoise[brotli]>=6.6.0',
+  "django-cpf-cnpj>=1.0.0",
+  "django-phonenumber-field[phonenumbers]>=8.4.0",
+  "phonenumbers>=9.0.31",
+  "requests>=2.34.2",
 ]
 requires-python = ">=3.10"
 license = { text = "MIT" }

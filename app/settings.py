@@ -39,7 +39,10 @@ INSTALLED_APPS = [
     'django_filters',
     'drf_spectacular',
     'rest_framework',
+    'uploader',
     'core',
+    'django_cpf_cnpj',
+    'phonenumber_field',
 ]
 
 MIDDLEWARE = [
@@ -115,8 +118,7 @@ FILE_UPLOAD_PERMISSIONS = 0o640
 
 # Configurações específicas para desenvolvimento, migração e produção
 if MODE == 'DEVELOPMENT':
-    MY_IP = os.getenv('MY_IP', '127.0.0.1')
-    MEDIA_URL = f'http://{MY_IP}:19003/media/'
+    MEDIA_URL = 'http://localhost:8000//media/'
 else:
     MEDIA_URL = '/media/'
     CLOUDINARY_URL = os.getenv('CLOUDINARY_URL')
@@ -141,7 +143,7 @@ SPECTACULAR_SETTINGS = {
 }
 
 # Modelo de usuário personalizado
-AUTH_USER_MODEL = 'core.User'
+AUTH_USER_MODEL = 'core.Usuario'
 
 # Configurações do Django REST Framework
 REST_FRAMEWORK = {
@@ -160,3 +162,5 @@ SIMPLE_JWT = {
 
 # Exibe as configurações principais para verificação
 print(f'{MODE = } \n{MEDIA_URL = } \n{DATABASES = }')
+
+
