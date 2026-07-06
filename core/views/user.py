@@ -58,6 +58,14 @@ class PerfilBabaViewSet(ModelViewSet):
         if PerfilBaba.objects.filter(usuario=self.request.user).exists():
             raise ValidationError({'detail': 'Perfil de babá já existe para este usuário.'})
         serializer.save(usuario=self.request.user)
+        from rest_framework.decorators import action
+from rest_framework.response import Response
+
+@action(detail=False, methods=["get"])
+def me(self, request):
+    perfil = self.get_queryset().get(usuario=request.user)
+    serializer = self.get_serializer(perfil)
+    return Response(serializer.data)
 
 
 class CriancaViewSet(ModelViewSet):
