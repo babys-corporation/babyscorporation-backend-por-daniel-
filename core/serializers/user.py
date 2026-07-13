@@ -55,10 +55,35 @@ class UserRegistrationSerializer(ModelSerializer):
 
     class Meta:
         model = Usuario
-        fields = ['id', 'username', 'email', 'password', 'tipo', 'foto_attachment_key', 'access', 'refresh']
+        fields = [
+            'id',
+            'username',
+            'email',
+            'password',
+            'tipo',
+            'foto_attachment_key',
+            'access',
+            'refresh'
+        ]
 
-    def create(self, validated_data):
-        return Usuario.objects.create_user(**validated_data)
+    def create(self,  validated_data):
+     email = validated_data["email"]
+
+     usuario = Usuario.objects.create_user(
+        username=email,
+        email=email,
+        password=validated_data["password"],
+        tipo=validated_data["tipo"],
+        foto=validated_data.get("foto"),
+    )
+
+     if usuario.tipo == Usuario.TipoUsuario.PAI:
+        PerfilPai.objects.create(usuario=usuario)
+     else:
+        PerfilBaba.objects.create(usuario=usuario)
+
+     return usuario
+
 
     def get_access(self, obj):
         return str(RefreshToken.for_user(obj).access_token)

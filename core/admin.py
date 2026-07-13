@@ -7,6 +7,19 @@ from core.models import Usuario, PerfilPai, PerfilBaba, Agendamento, Crianca
 from core.models import Avaliacao
 
 
+#as clases a abaixo receberam explicação logo
+class PerfilBabaInline(admin.StackedInline):
+    model = PerfilBaba
+    can_delete = False
+    verbose_name_plural = 'Perfil Babá'
+
+class PerfilPaiInline(admin.StackedInline):
+    model = PerfilPai
+    can_delete = False
+    verbose_name_plural = 'Perfil Pai'
+
+
+
 class UsuarioAdminForm(forms.ModelForm):
     class Meta:
         model = Usuario
@@ -21,40 +34,100 @@ class UsuarioAdminForm(forms.ModelForm):
 
 @admin.register(Usuario)
 class UsuarioAdmin(BaseUserAdmin):
+    inlines = [PerfilPaiInline, PerfilBabaInline]
     form = UsuarioAdminForm
     ordering = ['id']
     list_display = ['username', 'email', 'first_name', 'last_name', 'tipo', 'is_staff']
     list_filter = ['tipo', 'is_staff', 'is_active']
+
     fieldsets = (
         (None, {'fields': ('username', 'password')}),
-        (_('Informações pessoais'), {'fields': ('first_name', 'last_name', 'email', 'cpf', 'tipo', 'foto', 'telefone')}),
-        (_('Localização'), {'fields': ('cep', 'cidade', 'bairro')}),
-        (_('Permissões'), {'fields': ('is_active', 'is_staff', 'is_superuser', 'groups', 'user_permissions')}),
-        (_('Datas importantes'), {'fields': ('last_login', 'date_joined')}),
-    )
-    readonly_fields = ['last_login', 'date_joined', 'cidade', 'bairro']
-    add_fieldsets = (
-        (None, {
-            'classes': ('wide',),
-            'fields': ('username', 'email', 'first_name', 'last_name', 'cpf', 'tipo', 'foto', 'telefone', 'cep', 'password1', 'password2', 'is_active', 'is_staff'),
+        (_('Informações pessoais'), {
+            'fields': (
+                'primeiro_nome',
+                'ultimo_nome',
+                'email',
+                'cpf',
+                'tipo',
+                'foto',
+                'telefone',
+            )
+        }),
+        (_('Localização'), {
+            'fields': (
+                'cep',
+                'cidade',
+                'bairro',
+            )
+        }),
+        (_('Permissões'), {
+            'fields': (
+                'is_active',
+                'is_staff',
+                'is_superuser',
+                'groups',
+                'user_permissions',
+            )
+        }),
+        (_('Datas importantes'), {
+            'fields': (
+                'last_login',
+                'date_joined',
+            )
         }),
     )
 
+    readonly_fields = [
+        'last_login',
+        'date_joined',
+        'cidade',
+        'bairro',
+    ]
+
+    add_fieldsets = (
+        (
+            None,
+            {
+                'classes': ('wide',),
+                'fields': (
+                    'email',
+                    'password1',
+                    'password2',
+                    'tipo',
+                    'primeiro_nome',
+                    'ultimo_nome',
+                    'cpf',
+                    'foto',
+                    'telefone',
+                    'cep',
+                    'is_active',
+                    'is_staff',
+                ),
+            },
+        ),
+    )
+
     def save_model(self, request, obj, form, change):
+        obj.username = obj.email
+        
+
         cep = obj.cep
+
         if cep:
             cep_limpo = cep.replace('-', '').strip()
-            r = requests.get(f"https://viacep.com.br/ws/{cep_limpo}/json/")
+
+            r = requests.get(
+                f"https://viacep.com.br/ws/{cep_limpo}/json/"
+            )
+
             dados = r.json()
+
             if 'erro' not in dados:
                 obj.cidade = dados['localidade']
                 obj.bairro = dados['bairro']
+
         super().save_model(request, obj, form, change)
-        if not change:
-            if obj.tipo == Usuario.TipoUsuario.PAI:
-                PerfilPai.objects.get_or_create(usuario=obj)
-            elif obj.tipo == Usuario.TipoUsuario.BABA:
-                PerfilBaba.objects.get_or_create(usuario=obj)
+
 
 
 @admin.register(PerfilPai)
@@ -75,6 +148,8 @@ class PerfilBabaAdmin(admin.ModelAdmin):
         if db_field.name == 'usuario':
             kwargs['queryset'] = Usuario.objects.filter(tipo=Usuario.TipoUsuario.BABA)
         return super().formfield_for_foreignkey(db_field, request, **kwargs)
+
+
 
 
 @admin.register(Crianca)
