@@ -24,6 +24,9 @@ class Usuario(AbstractUser):
         blank=True,
         default=None,
     )
+    email = models.EmailField(unique=True)
+    primeiro_nome = models.CharField(max_length=30, null=True, blank=True)
+    ultimo_nome = models.CharField(max_length=30, null=True, blank=True)
     cpf = CPFField(null=True, blank=True, unique=True)
     telefone = PhoneNumberField(null=True, blank=True, region='BR')
     cep = models.CharField(max_length=9, null=True, blank=True)
@@ -40,12 +43,13 @@ class Usuario(AbstractUser):
 
 
 class PerfilPai(models.Model):
+    
     usuario = models.OneToOneField(
         Usuario,
         on_delete=models.CASCADE,
         related_name="perfil_pai",
     )
-    numero_filhos = models.PositiveIntegerField(default=0)
+    numero_filhos = models.PositiveIntegerField(default=0 , null=True, blank=True)
 
     def __str__(self):
         return f"Perfil Pai - {self.usuario}"
@@ -57,7 +61,7 @@ class PerfilBaba(models.Model):
         on_delete=models.CASCADE,
         related_name="perfil_baba",
     )
-    experiencia_anos = models.PositiveIntegerField(default=0)
+    experiencia_anos = models.PositiveIntegerField(default=0 , null=True, blank=True)
     descricao = models.TextField(null=True, blank=True)
     disponivel = models.BooleanField(default=True)
     valor_hora = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
