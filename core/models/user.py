@@ -92,3 +92,20 @@ class Crianca(models.Model):
 
     def __str__(self):
         return f"{self.nome} - filho de {self.perfil_pai.usuario}"
+
+class PerfilBabaCompleta(models.Model):
+    """
+    Tabela utilitária: guarda apenas os perfis de babá que estão
+    com todas as informações necessárias preenchidas.
+    É mantida sincronizada automaticamente via signals
+    (veja core/signals.py) — não deve ser editada manualmente.
+    """
+    perfil_baba = models.OneToOneField(
+        PerfilBaba,
+        on_delete=models.CASCADE,
+        related_name="completude",
+    )
+    atualizado_em = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"Completa - {self.perfil_baba.usuario}"
