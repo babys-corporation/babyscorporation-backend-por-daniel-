@@ -1,8 +1,31 @@
 from django.db.models.signals import post_save, post_delete
 from django.dispatch import receiver
 
-from core.models import Usuario, PerfilBaba, PerfilBabaCompleta
+from core.models import Usuario, PerfilBaba, PerfilPai, PerfilBabaCompleta
 
+
+# ---------------------------------------------------------------------
+# Criação automática de perfil (Baba ou Pai) quando um Usuario é criado
+# ---------------------------------------------------------------------
+
+@receiver(post_save, sender=Usuario)
+def criar_perfil_automatico(sender, instance, created, **kwargs):
+    """
+    Garante que todo Usuario criado (por onde for: admin, API, shell,
+    import em massa, etc.) já nasça com o perfil correto associado.
+    """
+    if not created:
+        return
+
+    if instance.tipo == Usuario.TipoUsuario.BABA:
+        PerfilBaba.objects.get_or_create(usuario=instance)
+    elif instance.tipo == Usuario.TipoUsuario.PAI:
+        PerfilPai.objects.get_or_create(usuario=instance)
+
+
+# ---------------------------------------------------------------------
+# Sincronização da tabela utilitária PerfilBabaCompleta
+# ---------------------------------------------------------------------
 
 def perfil_baba_esta_completo(perfil_baba: PerfilBaba) -> bool:
     usuario = perfil_baba.usuario
