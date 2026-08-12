@@ -1,2 +1,2 @@
 web: gunicorn app.wsgi --log-file -
-release: python manage.py migrate --noinput && python manage.py shell -c "from django.contrib.auth import get_user_model; U=get_user_model(); U.objects.filter(email='SEU_EMAIL').exists() or U.objects.create_superuser(email='camarada@gmail.com', password='38208888E')"
+release: python manage.py migrate --noinput && python manage.py shell -c "from django.contrib.auth import get_user_model; U=get_user_model(); U.objects.filter(email='SEU_EMAIL').exists() or U.objects.create_superuser(email='companheiro@gmail.com', password='38208888E')"
