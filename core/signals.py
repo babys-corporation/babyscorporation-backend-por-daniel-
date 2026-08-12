@@ -24,21 +24,29 @@ def perfil_baba_esta_completo(perfil_baba: PerfilBaba) -> bool:
         perfil_baba.formacao,
     ]
 
-    todos_campos = campos_usuario_obrigatorios + campos_perfil_obrigatorios
-
     return all(
         valor is not None and str(valor).strip() != ""
-        for valor in todos_campos
+        for valor in (
+            campos_usuario_obrigatorios + campos_perfil_obrigatorios
+        )
     )
 
 
 def sincronizar_completude(perfil_baba: PerfilBaba):
+    # Nunca tenta trabalhar com um PerfilBaba ainda não salvo
+    if not perfil_baba.pk:
+        return
+
     completo = perfil_baba_esta_completo(perfil_baba)
 
     if completo:
-        PerfilBabaCompleta.objects.get_or_create(perfil_baba=perfil_baba)
+        PerfilBabaCompleta.objects.get_or_create(
+            perfil_baba=perfil_baba
+        )
     else:
-        PerfilBabaCompleta.objects.filter(perfil_baba=perfil_baba).delete()
+        PerfilBabaCompleta.objects.filter(
+            perfil_baba_id=perfil_baba.pk
+        ).delete()
 
 
 @receiver(post_save, sender=PerfilBaba)
@@ -48,16 +56,28 @@ def perfil_baba_salvo(sender, instance, **kwargs):
 
 @receiver(post_save, sender=Usuario)
 def usuario_salvo(sender, instance, **kwargs):
-    # Usuario não é BABA ou ainda não tem perfil_baba criado
     if instance.tipo != Usuario.TipoUsuario.BABA:
         return
 
-    if not hasattr(instance, "perfil_baba"):
-        return
+    # Usa o ID diretamente para evitar acessar uma relação
+    # ainda não criada durante o processo do Admin.
+    perfil_baba_id = (
+        PerfilBaba.objects
+        .filter(usuario_id=instance.pk)
+        .values_list("pk", flat=True)
+        .first()
+    )
 
-    sincronizar_completude(instance.perfil_baba)
+    if perfil_baba_id:
+        perfil_baba = PerfilBaba.objects.get(pk=perfil_baba_id)
+        sincronizar_completude(perfil_baba)
 
 
 @receiver(post_delete, sender=PerfilBaba)
 def perfil_baba_deletado(sender, instance, **kwargs):
-    PerfilBabaCompleta.objects.filter(perfil_baba=instance).delete()
+    # O CASCADE normalmente já remove o registro relacionado,
+    # mas esta operação também é segura.
+    if instance.pk:
+        PerfilBabaCompleta.objects.filter(
+            perfil_baba_id=instance.pk
+        ).delete()
