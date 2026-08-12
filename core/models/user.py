@@ -14,7 +14,6 @@ class UsuarioManager(BaseUserManager):
         email = self.normalize_email(email)
 
         usuario = self.model(
-            username=email,
             email=email,
             **extra_fields,
         )
@@ -43,6 +42,7 @@ class UsuarioManager(BaseUserManager):
 
 
 class Usuario(AbstractUser):
+    username = None
     USERNAME_FIELD = "email"
     REQUIRED_FIELDS = []
 

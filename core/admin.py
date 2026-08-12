@@ -68,7 +68,6 @@ class UsuarioAdmin(admin.ModelAdmin):
             {
                 "fields": (
                     "email",
-                    "username",
                     "password",
                 )
             },
@@ -131,7 +130,6 @@ class UsuarioAdmin(admin.ModelAdmin):
     ]
 
     def save_model(self, request, obj, form, change):
-        obj.username = obj.email
 
         cep = obj.cep
 
