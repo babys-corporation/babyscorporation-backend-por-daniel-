@@ -20,101 +20,107 @@ class PerfilPaiInline(admin.StackedInline):
 
 
 
+
+
+
+
+
+
+
 class UsuarioAdminForm(forms.ModelForm):
     class Meta:
         model = Usuario
-        fields = '__all__'
+        fields = "__all__"
         widgets = {
-            'cpf': forms.TextInput(attrs={
-                'placeholder': '000.000.000-00',
-                'maxlength': '14',
+            "cpf": forms.TextInput(attrs={
+                "placeholder": "000.000.000-00",
+                "maxlength": "14",
             }),
         }
 
 
 @admin.register(Usuario)
-class UsuarioAdmin(BaseUserAdmin):
+class UsuarioAdmin(admin.ModelAdmin):
     inlines = [PerfilPaiInline, PerfilBabaInline]
     form = UsuarioAdminForm
-    ordering = ['id']
-    list_display = ['username', 'email', 'first_name', 'last_name', 'tipo', 'is_staff']
-    list_filter = ['tipo', 'is_staff', 'is_active']
+
+    ordering = ["id"]
+
+    list_display = [
+        "email",
+        "primeiro_nome",
+        "ultimo_nome",
+        "tipo",
+        "is_staff",
+    ]
+
+    list_filter = [
+        "tipo",
+        "is_staff",
+        "is_active",
+    ]
 
     fieldsets = (
-        (None, {'fields': ('username', 'password')}),
-        (_('Informações pessoais'), {
-            'fields': (
-                'primeiro_nome',
-                'ultimo_nome',
-                'email',
-                'cpf',
-                'tipo',
-                'foto',
-                'telefone',
+        (None, {
+            "fields": (
+                "email",
+                "username",
+                "password",
             )
         }),
-        (_('Localização'), {
-            'fields': (
-                'cep',
-                'cidade',
-                'bairro',
+
+        (_("Informações pessoais"), {
+            "fields": (
+                "primeiro_nome",
+                "ultimo_nome",
+                "cpf",
+                "tipo",
+                "foto",
+                "telefone",
             )
         }),
-        (_('Permissões'), {
-            'fields': (
-                'is_active',
-                'is_staff',
-                'is_superuser',
-                'groups',
-                'user_permissions',
+
+        (_("Localização"), {
+            "fields": (
+                "cep",
+                "cidade",
+                "bairro",
             )
         }),
-        (_('Datas importantes'), {
-            'fields': (
-                'last_login',
-                'date_joined',
+
+        (_("Permissões"), {
+            "fields": (
+                "is_active",
+                "is_staff",
+                "is_superuser",
+                "groups",
+                "user_permissions",
+            )
+        }),
+
+        (_("Datas importantes"), {
+            "fields": (
+                "last_login",
+                "date_joined",
             )
         }),
     )
 
     readonly_fields = [
-        'last_login',
-        'date_joined',
-        'cidade',
-        'bairro',
+        "last_login",
+        "date_joined",
+        "cidade",
+        "bairro",
     ]
 
-    add_fieldsets = (
-        (
-            None,
-            {
-                'classes': ('wide',),
-                'fields': (
-                    'email',
-                    'password1',
-                    'password2',
-                    'tipo',
-                    'primeiro_nome',
-                    'ultimo_nome',
-                    'cpf',
-                    'foto',
-                    'telefone',
-                    'cep',
-                    'is_active',
-                    'is_staff',
-                ),
-            },
-        ),
-    )
-
     def save_model(self, request, obj, form, change):
+        # Username sempre será igual ao e-mail
         obj.username = obj.email
-        
 
         cep = obj.cep
 
         if cep:
-            cep_limpo = cep.replace('-', '').strip()
+            cep_limpo = cep.replace("-", "").strip()
 
             r = requests.get(
                 f"https://viacep.com.br/ws/{cep_limpo}/json/"
@@ -122,11 +128,20 @@ class UsuarioAdmin(BaseUserAdmin):
 
             dados = r.json()
 
-            if 'erro' not in dados:
-                obj.cidade = dados['localidade']
-                obj.bairro = dados['bairro']
+            if "erro" not in dados:
+                obj.cidade = dados["localidade"]
+                obj.bairro = dados["bairro"]
 
         super().save_model(request, obj, form, change)
+
+
+
+
+
+
+
+
+
 
 
 
