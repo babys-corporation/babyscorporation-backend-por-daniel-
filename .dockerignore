@@ -1,0 +1,7 @@
+.venv
+.pdm-python
+__pycache__
+*.pyc
+.git
+db.sqlite3
+staticfiles/
