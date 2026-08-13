@@ -138,7 +138,7 @@ class UsuarioAdmin(admin.ModelAdmin):
           
             try:
                 r = requests.get(
-                    f"https://viacep.com.br/ws/{cep_limpo}/json/"
+                    f"https://viacep.com.br/ws/{cep_limpo}/json/",
                     timeout=5
                 )   
 
