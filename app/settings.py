@@ -23,13 +23,18 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 # Segurança e configuração básica
 SECRET_KEY = os.getenv('SECRET_KEY', 'django-insecure')
-DEBUG = os.getenv('DEBUG', 'False')
+DEBUG = os.getenv('DEBUG', 'False') == 'True'
 ALLOWED_HOSTS = ['*']
 CSRF_TRUSTED_ORIGINS = [
     'http://localhost:3000',
     'http://localhost:8000',
+    'colocar railway'
 ]
-CORS_ALLOW_ALL_ORIGINS = True
+CORS_ALLOWED_ORIGINS = [
+    'https://babycorporation-frontend.vercel.app',
+]
+
+CORS_ALLOW_ALL_ORIGINS = False 
 
 # Aplicações instaladas
 INSTALLED_APPS = [
@@ -168,6 +173,5 @@ SIMPLE_JWT = {
 }
 
 # Exibe as configurações principais para verificação
-print(f'{MODE = } \n{MEDIA_URL = } \n{DATABASES = }')
 
 
