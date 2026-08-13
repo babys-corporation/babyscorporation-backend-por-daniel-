@@ -83,15 +83,8 @@ class UserRegistrationSerializer(ModelSerializer):
             foto=foto,
         )
 
-        if tipo == Usuario.TipoUsuario.PAI:
-            PerfilPai.objects.create(
-                usuario=usuario,
-            )
-
-        elif tipo == Usuario.TipoUsuario.BABA:
-            PerfilBaba.objects.create(
-                usuario=usuario,
-            )
+        # PerfilPai / PerfilBaba são criados automaticamente
+        # pelo signal em core/signals.py (post_save de Usuario).
 
         return usuario
 
