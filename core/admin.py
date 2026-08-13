@@ -135,16 +135,25 @@ class UsuarioAdmin(admin.ModelAdmin):
 
         if cep:
             cep_limpo = cep.replace("-", "").strip()
+          
+            try:
+                r = requests.get(
+                    f"https://viacep.com.br/ws/{cep_limpo}/json/"
+                    timeout=5
+                )   
 
-            r = requests.get(
-                f"https://viacep.com.br/ws/{cep_limpo}/json/"
-            )
+                r.raise_for_status()
+                dados = r.json()
 
-            dados = r.json()
 
-            if "erro" not in dados:
-                obj.cidade = dados["localidade"]
-                obj.bairro = dados["bairro"]
+                if "erro" not in dados:
+                    obj.cidade = dados["localidade"]
+                    obj.bairro = dados["bairro"]
+
+            except requests.exceptions.RequestException:
+                # ViaCEP fora do ar ou sem conexão: segue o cadastro
+                # sem preencher cidade/bairro automaticamente
+                pass
 
         super().save_model(request, obj, form, change)
 
