@@ -28,7 +28,7 @@ ALLOWED_HOSTS = ['*']
 CSRF_TRUSTED_ORIGINS = [
     'http://localhost:3000',
     'http://localhost:8000',
-    'colocar railway',
+    'https://babycorpback-production.up.railway.app',
     'https://babycorporation-backend.class.fabricadesoftware.ifc.edu.br'
 ]
 CORS_ALLOWED_ORIGINS = [
