@@ -1,9 +1,7 @@
 import requests
-
 from django import forms
 from django.contrib import admin
 from django.utils.translation import gettext_lazy as _
-
 from core.models import (
     Usuario,
     PerfilPai,
@@ -18,19 +16,20 @@ class PerfilBabaInline(admin.StackedInline):
     model = PerfilBaba
     can_delete = False
     verbose_name_plural = "Perfil Babá"
+    extra = 0
 
 
 class PerfilPaiInline(admin.StackedInline):
     model = PerfilPai
     can_delete = False
     verbose_name_plural = "Perfil Pai"
+    extra = 0
 
 
 class UsuarioAdminForm(forms.ModelForm):
     class Meta:
         model = Usuario
         fields = "__all__"
-
         widgets = {
             "cpf": forms.TextInput(
                 attrs={
@@ -43,11 +42,8 @@ class UsuarioAdminForm(forms.ModelForm):
 
 @admin.register(Usuario)
 class UsuarioAdmin(admin.ModelAdmin):
-    inlines = [PerfilPaiInline, PerfilBabaInline]
     form = UsuarioAdminForm
-
     ordering = ["id"]
-
     list_display = [
         "email",
         "primeiro_nome",
@@ -55,13 +51,11 @@ class UsuarioAdmin(admin.ModelAdmin):
         "tipo",
         "is_staff",
     ]
-
     list_filter = [
         "tipo",
         "is_staff",
         "is_active",
     ]
-
     fieldsets = (
         (
             None,
@@ -72,7 +66,6 @@ class UsuarioAdmin(admin.ModelAdmin):
                 )
             },
         ),
-
         (
             _("Informações pessoais"),
             {
@@ -86,7 +79,6 @@ class UsuarioAdmin(admin.ModelAdmin):
                 )
             },
         ),
-
         (
             _("Localização"),
             {
@@ -97,7 +89,6 @@ class UsuarioAdmin(admin.ModelAdmin):
                 )
             },
         ),
-
         (
             _("Permissões"),
             {
@@ -110,7 +101,6 @@ class UsuarioAdmin(admin.ModelAdmin):
                 )
             },
         ),
-
         (
             _("Datas importantes"),
             {
@@ -121,7 +111,6 @@ class UsuarioAdmin(admin.ModelAdmin):
             },
         ),
     )
-
     readonly_fields = [
         "last_login",
         "date_joined",
@@ -129,32 +118,44 @@ class UsuarioAdmin(admin.ModelAdmin):
         "bairro",
     ]
 
+    def get_inline_instances(self, request, obj=None):
+        # Ao CRIAR um usuário (obj is None), não mostra nenhum inline.
+        # O signal em core/signals.py já cria o perfil certo
+        # automaticamente logo após o save — mostrar o inline aqui
+        # causaria uma tentativa de criação duplicada (IntegrityError).
+        if obj is None:
+            return []
+
+        # Ao EDITAR, mostra só o inline correspondente ao tipo do
+        # usuário, evitando expor/tentar salvar o perfil errado.
+        if obj.tipo == Usuario.TipoUsuario.BABA:
+            inline_classes = [PerfilBabaInline]
+        elif obj.tipo == Usuario.TipoUsuario.PAI:
+            inline_classes = [PerfilPaiInline]
+        else:
+            inline_classes = []
+
+        return [inline_class(self.model, self.admin_site) for inline_class in inline_classes]
+
     def save_model(self, request, obj, form, change):
-
         cep = obj.cep
-
         if cep:
             cep_limpo = cep.replace("-", "").strip()
-          
+
             try:
                 r = requests.get(
                     f"https://viacep.com.br/ws/{cep_limpo}/json/",
                     timeout=5
-                )   
-
+                )
                 r.raise_for_status()
                 dados = r.json()
-
-
                 if "erro" not in dados:
                     obj.cidade = dados["localidade"]
                     obj.bairro = dados["bairro"]
-
             except requests.exceptions.RequestException:
                 # ViaCEP fora do ar ou sem conexão: segue o cadastro
                 # sem preencher cidade/bairro automaticamente
                 pass
-
         super().save_model(request, obj, form, change)
 
 
@@ -167,7 +168,6 @@ class PerfilPaiAdmin(admin.ModelAdmin):
             kwargs["queryset"] = Usuario.objects.filter(
                 tipo=Usuario.TipoUsuario.PAI
             )
-
         return super().formfield_for_foreignkey(
             db_field,
             request,
@@ -189,7 +189,6 @@ class PerfilBabaAdmin(admin.ModelAdmin):
             kwargs["queryset"] = Usuario.objects.filter(
                 tipo=Usuario.TipoUsuario.BABA
             )
-
         return super().formfield_for_foreignkey(
             db_field,
             request,
@@ -209,7 +208,6 @@ class CriancaAdmin(admin.ModelAdmin):
     def formfield_for_foreignkey(self, db_field, request, **kwargs):
         if db_field.name == "perfil_pai":
             kwargs["queryset"] = PerfilPai.objects.all()
-
         return super().formfield_for_foreignkey(
             db_field,
             request,
@@ -236,7 +234,5 @@ class AvaliacaoAdmin(admin.ModelAdmin):
         "estrelas",
         "criado_em",
     ]
-
     list_filter = ["estrelas"]
-
     ordering = ["-criado_em"]
