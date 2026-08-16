@@ -7,7 +7,6 @@ from core.models import Usuario, PerfilBaba, PerfilPai, PerfilBabaCompleta
 # ---------------------------------------------------------------------
 # Criação automática de perfil (Baba ou Pai) quando um Usuario é criado
 # ---------------------------------------------------------------------
-
 @receiver(post_save, sender=Usuario)
 def criar_perfil_automatico(sender, instance, created, **kwargs):
     """
@@ -26,7 +25,6 @@ def criar_perfil_automatico(sender, instance, created, **kwargs):
 # ---------------------------------------------------------------------
 # Sincronização da tabela utilitária PerfilBabaCompleta
 # ---------------------------------------------------------------------
-
 def perfil_baba_esta_completo(perfil_baba: PerfilBaba) -> bool:
     usuario = perfil_baba.usuario
 
@@ -79,9 +77,12 @@ def perfil_baba_salvo(sender, instance, **kwargs):
 
 @receiver(post_save, sender=Usuario)
 def usuario_salvo(sender, instance, **kwargs):
-    if instance.tipo != Usuario.TipoUsuario.BABA:
-        return
-
+    # Não filtra mais por instance.tipo: o campo `tipo` do Usuario pode
+    # estar dessincronizado do perfil real (ex.: editado manualmente,
+    # ou alterado depois de o PerfilBaba já existir). A fonte de
+    # verdade sobre "essa pessoa tem um perfil de babá" é a existência
+    # do registro PerfilBaba em si, não o valor de `tipo`.
+    #
     # Usa o ID diretamente para evitar acessar uma relação
     # ainda não criada durante o processo do Admin.
     perfil_baba_id = (
@@ -90,7 +91,6 @@ def usuario_salvo(sender, instance, **kwargs):
         .values_list("pk", flat=True)
         .first()
     )
-
     if perfil_baba_id:
         perfil_baba = PerfilBaba.objects.get(pk=perfil_baba_id)
         sincronizar_completude(perfil_baba)
