@@ -1,17 +1,17 @@
 import os
 from datetime import timedelta
 from pathlib import Path
-
 import dj_database_url
 from dotenv import load_dotenv
 import socket
 import urllib3.util.connection as urllib3_cn
 
+
 def allowed_gai_family():
     return socket.AF_INET
 
-urllib3_cn.allowed_gai_family = allowed_gai_family
 
+urllib3_cn.allowed_gai_family = allowed_gai_family
 
 # Carrega as variáveis de ambiente do arquivo .env
 load_dotenv()
@@ -33,17 +33,18 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = os.getenv('SECRET_KEY', 'django-insecure')
 DEBUG = os.getenv('DEBUG', 'False') == 'True'
 ALLOWED_HOSTS = ['*']
+
 CSRF_TRUSTED_ORIGINS = [
     'http://localhost:3000',
     'http://localhost:8000',
     'https://babycorpback-production.up.railway.app',
-    'https://babycorporation-backend.class.fabricadesoftware.ifc.edu.br'
 ]
+
 CORS_ALLOWED_ORIGINS = [
     'https://babycorporation-frontend.vercel.app',
 ]
 
-CORS_ALLOW_ALL_ORIGINS = False 
+CORS_ALLOW_ALL_ORIGINS = False
 
 # Aplicações instaladas
 INSTALLED_APPS = [
@@ -138,9 +139,18 @@ MEDIA_ROOT = os.path.join(BASE_DIR, 'media/')
 FILE_UPLOAD_PERMISSIONS = 0o640
 
 # Configurações específicas para desenvolvimento, migração e produção
+# Só entra em modo DEVELOPMENT se a variável for EXATAMENTE 'DEVELOPMENT'.
+# Qualquer outro valor (incluindo ausência da variável) assume produção,
+# o que é mais seguro: prefira quebrar por falta de config em vez de
+# silenciosamente cair em modo dev e desativar o Cloudinary sem avisar.
 if MODE == 'DEVELOPMENT':
-    MEDIA_URL = 'http://localhost:8000//media/'
+    MEDIA_URL = 'http://localhost:8000/media/'
 else:
+    if MODE != 'PRODUCTION':
+        import warnings
+        warnings.warn(
+            f"MODE='{MODE}' não reconhecido; assumindo comportamento de PRODUCTION."
+        )
     MEDIA_URL = '/media/'
     CLOUDINARY_URL = os.getenv('CLOUDINARY_URL')
     STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
@@ -180,7 +190,3 @@ SIMPLE_JWT = {
     'REFRESH_TOKEN_LIFETIME': timedelta(days=1),  # Tokens de atualização expiram em 1 dia
     'AUTH_HEADER_TYPES': ('Bearer',),
 }
-
-# Exibe as configurações principais para verificação
-
-
