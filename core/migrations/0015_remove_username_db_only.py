@@ -1,6 +1,13 @@
 from django.db import migrations
 
 
+def drop_username_column(apps, schema_editor):
+    if schema_editor.connection.vendor != 'sqlite':
+        schema_editor.execute(
+            'ALTER TABLE core_usuario DROP COLUMN IF EXISTS username;'
+        )
+
+
 class Migration(migrations.Migration):
 
     dependencies = [
@@ -8,8 +15,5 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.RunSQL(
-            sql='ALTER TABLE core_usuario DROP COLUMN IF EXISTS username;',
-            reverse_sql=migrations.RunSQL.noop,
-        ),
+        migrations.RunPython(drop_username_column, migrations.RunPython.noop),
     ]

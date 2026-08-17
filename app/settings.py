@@ -41,8 +41,9 @@ CSRF_TRUSTED_ORIGINS = [
 ]
 
 CORS_ALLOWED_ORIGINS = [
-    'https://babycorporation-frontend.vercel.app',
+    'http://localhost:3000',
     'http://localhost:5173',
+    'https://babycorporation-frontend.vercel.app',
 ]
 
 CORS_ALLOW_ALL_ORIGINS = False

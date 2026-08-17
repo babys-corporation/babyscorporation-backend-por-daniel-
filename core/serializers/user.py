@@ -6,6 +6,7 @@ from rest_framework import serializers
 from rest_framework_simplejwt.tokens import RefreshToken
 
 from uploader.models import Image
+from uploader.serializers.image import ImageSerializer
 
 from core.models import (
     Usuario,
@@ -98,6 +99,8 @@ class UserRegistrationSerializer(ModelSerializer):
 
 
 class UserSerializer(ModelSerializer):
+    foto = ImageSerializer(read_only=True)
+
     class Meta:
         model = Usuario
         fields = "__all__"
@@ -110,6 +113,8 @@ class PerfilPaiSerializer(ModelSerializer):
 
 
 class PerfilBabaSerializer(ModelSerializer):
+    usuario = UserSerializer(read_only=True)
+
     class Meta:
         model = PerfilBaba
         fields = "__all__"

@@ -8,7 +8,7 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet
 
-from core.models import Usuario, PerfilPai, PerfilBaba, Crianca
+from core.models import Usuario, PerfilPai, PerfilBaba, Crianca, PerfilBabaCompleta
 from core.serializers import (
     UserRegistrationSerializer,
     UserSerializer,
@@ -104,6 +104,18 @@ class PerfilBabaViewSet(ModelViewSet):
     def me(self, request):
         perfil = PerfilBaba.objects.get(usuario=request.user)
         serializer = self.get_serializer(perfil)
+        return Response(serializer.data)
+
+    @action(detail=False, methods=["get"])
+    def completas(self, request):
+        babas_completas = PerfilBaba.objects.filter(
+            completude__isnull=False
+        ).order_by("id")
+        page = self.paginate_queryset(babas_completas)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+        serializer = self.get_serializer(babas_completas, many=True)
         return Response(serializer.data)
 
 
