@@ -36,6 +36,7 @@ def perfil_baba_esta_completo(perfil_baba: PerfilBaba) -> bool:
         usuario.cidade,
         usuario.bairro,
     ]
+    ~
 
     campos_perfil_obrigatorios = [
         perfil_baba.descricao,
