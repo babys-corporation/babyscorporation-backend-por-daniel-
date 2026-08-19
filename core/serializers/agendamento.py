@@ -3,7 +3,7 @@ from core.models import Agendamento
 
 class AgendamentoSerializer(serializers.ModelSerializer):
     nome_familia = serializers.CharField(
-        source="pai.usuario.username",
+        source="pai.usuario.email",
         read_only=True
     )
 

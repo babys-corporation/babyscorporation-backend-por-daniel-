@@ -103,7 +103,7 @@ class UserSerializer(ModelSerializer):
 
     class Meta:
         model = Usuario
-        fields = "__all__"
+        exclude = ["password"]
 
 
 class PerfilPaiSerializer(ModelSerializer):
