@@ -46,6 +46,12 @@ CORS_ALLOWED_ORIGINS = [
     'https://babycorporation-frontend.vercel.app',
 ]
 
+CORS_ALLOWED_ORIGIN_REGEXES = [
+    r'^https://babycorporation-frontend\.vercel\.app$',
+    r'^https://babycorporation-frontend-[a-z0-9]+\.vercel\.app$',
+    r'^http://localhost:\d+$',
+]
+
 CORS_ALLOW_ALL_ORIGINS = False
 
 # Aplicações instaladas
