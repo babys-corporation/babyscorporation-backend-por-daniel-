@@ -89,6 +89,11 @@ class PerfilBabaViewSet(ModelViewSet):
     serializer_class = PerfilBabaSerializer
     permission_classes = [IsAuthenticated]
 
+    def get_permissions(self):
+        if self.action in ("list", "retrieve", "completas"):
+            return [AllowAny()]
+        return super().get_permissions()
+
     def perform_create(self, serializer):
         if PerfilBaba.objects.filter(usuario=self.request.user).exists():
             raise ValidationError(
