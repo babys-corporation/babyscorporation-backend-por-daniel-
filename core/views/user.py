@@ -89,6 +89,11 @@ class PerfilBabaViewSet(ModelViewSet):
     serializer_class = PerfilBabaSerializer
     permission_classes = [IsAuthenticated]
 
+    def initialize_request(self, request, *args, **kwargs):
+        method = request.method.lower()
+        self.action = 'metadata' if method == 'options' else (self.action_map or {}).get(method)
+        return super().initialize_request(request, *args, **kwargs)
+
     def get_permissions(self):
         if self.action in ("list", "retrieve", "completas"):
             return [AllowAny()]
