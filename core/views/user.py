@@ -1,4 +1,5 @@
 from drf_spectacular.utils import extend_schema
+from django.shortcuts import get_object_or_404
 from rest_framework import status
 from rest_framework.exceptions import ValidationError
 from rest_framework.decorators import action
@@ -79,7 +80,7 @@ class PerfilPaiViewSet(ModelViewSet):
 
     @action(detail=False, methods=["get"])
     def me(self, request):
-        perfil = PerfilPai.objects.get(usuario=request.user)
+        perfil = get_object_or_404(PerfilPai, usuario=request.user)
         serializer = self.get_serializer(perfil)
         return Response(serializer.data)
 
@@ -117,7 +118,7 @@ class PerfilBabaViewSet(ModelViewSet):
 
     @action(detail=False, methods=["get"])
     def me(self, request):
-        perfil = PerfilBaba.objects.get(usuario=request.user)
+        perfil = get_object_or_404(PerfilBaba, usuario=request.user)
         serializer = self.get_serializer(perfil)
         return Response(serializer.data)
 
