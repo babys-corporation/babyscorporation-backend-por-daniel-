@@ -78,9 +78,19 @@ class PerfilPaiViewSet(ModelViewSet):
     def perform_update(self, serializer):
         serializer.save(usuario=self.request.user)
 
-    @action(detail=False, methods=["get"])
+    @action(detail=False, methods=["get", "patch"])
     def me(self, request):
         perfil = get_object_or_404(PerfilPai, usuario=request.user)
+
+        if request.method == "PATCH":
+            serializer = self.get_serializer(
+                perfil,
+                data=request.data,
+                partial=True,
+            )
+            serializer.is_valid(raise_exception=True)
+            serializer.save()
+
         serializer = self.get_serializer(perfil)
         return Response(serializer.data)
 
@@ -116,9 +126,19 @@ class PerfilBabaViewSet(ModelViewSet):
     def perform_update(self, serializer):
         serializer.save(usuario=self.request.user)
 
-    @action(detail=False, methods=["get"])
+    @action(detail=False, methods=["get", "patch"])
     def me(self, request):
         perfil = get_object_or_404(PerfilBaba, usuario=request.user)
+
+        if request.method == "PATCH":
+            serializer = self.get_serializer(
+                perfil,
+                data=request.data,
+                partial=True,
+            )
+            serializer.is_valid(raise_exception=True)
+            serializer.save()
+
         serializer = self.get_serializer(perfil)
         return Response(serializer.data)
 

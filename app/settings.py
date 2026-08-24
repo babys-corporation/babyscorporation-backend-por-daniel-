@@ -185,6 +185,9 @@ SPECTACULAR_SETTINGS = {
 # Modelo de usuário personalizado
 AUTH_USER_MODEL = 'core.Usuario'
 
+# Região padrão para validação de telefones (django-phonenumber-field)
+PHONE_NUMBER_DEFAULT_REGION = 'BR'
+
 # Configurações do Django REST Framework
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': ('rest_framework_simplejwt.authentication.JWTAuthentication',),
