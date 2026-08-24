@@ -14,13 +14,8 @@ class Migration(migrations.Migration):
             managers=[
             ],
         ),
-        migrations.SeparateDatabaseAndState(
-            state_operations=[
-                migrations.RemoveField(
-                    model_name='usuario',
-                    name='username',
-                ),
-            ],
-            database_operations=[],
+        migrations.RemoveField(
+            model_name='usuario',
+            name='username',
         ),
     ]
