@@ -16,6 +16,7 @@ from rest_framework_simplejwt.views import (
 from core.views.user import CriancaViewSet
 from uploader.router import router as uploader_router
 from core.views import UserRegistrationView, UserViewSet, PerfilPaiViewSet, PerfilBabaViewSet, AgendamentoViewSet
+from core.views.agendamento import CelcoinPixWebhookView
 from core.views.avaliacao import AvaliacaoViewSet
 
 router = DefaultRouter()
@@ -36,6 +37,7 @@ urlpatterns = [
     path('api/token/verify/', TokenVerifyView.as_view(), name='token_verify'),
     path('api/registro/', UserRegistrationView.as_view(), name='user_registration'),
     path('api/media/', include(uploader_router.urls)),
+    path('api/pix/webhook/celcoin/', CelcoinPixWebhookView.as_view(), name='pix-webhook-celcoin'),
     path('api/', include(router.urls)),
     
 ]

@@ -295,6 +295,20 @@ class PerfilBabaSerializer(ModelSerializer):
     class Meta:
         model = PerfilBaba
         fields = "__all__"
+        read_only_fields = ["advertencias", "banido", "banido_em"]
+
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        request = self.context.get("request")
+        user = getattr(request, "user", None) if request else None
+        eh_dona = bool(
+            user
+            and getattr(user, "is_authenticated", False)
+            and instance.usuario_id == user.id
+        )
+        if not eh_dona:
+            data.pop("chave_pix", None)
+        return data
 
 
 class CriancaSerializer(ModelSerializer):

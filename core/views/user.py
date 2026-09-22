@@ -115,6 +115,11 @@ class PerfilBabaViewSet(ModelViewSet):
             return []
         return super().get_authenticators()
 
+    def get_queryset(self):
+        if self.action in ("list", "completas"):
+            return PerfilBaba.objects.filter(banido=False).order_by("id")
+        return PerfilBaba.objects.all().order_by("id")
+
     def perform_create(self, serializer):
         if PerfilBaba.objects.filter(usuario=self.request.user).exists():
             raise ValidationError(
@@ -129,7 +134,6 @@ class PerfilBabaViewSet(ModelViewSet):
     @action(detail=False, methods=["get", "patch"])
     def me(self, request):
         perfil = get_object_or_404(PerfilBaba, usuario=request.user)
-
         if request.method == "PATCH":
             serializer = self.get_serializer(
                 perfil,
@@ -145,7 +149,8 @@ class PerfilBabaViewSet(ModelViewSet):
     @action(detail=False, methods=["get"])
     def completas(self, request):
         babas_completas = PerfilBaba.objects.filter(
-            completude__isnull=False
+            completude__isnull=False,
+            banido=False,
         ).order_by("id")
         page = self.paginate_queryset(babas_completas)
         if page is not None:

@@ -190,6 +190,29 @@ class PerfilBaba(models.Model):
         blank=True,
     )
 
+    chave_pix = models.CharField(
+        max_length=200,
+        null=True,
+        blank=True,
+        verbose_name="Chave Pix",
+    )
+
+    advertencias = models.PositiveIntegerField(
+        default=0,
+        help_text="Advertências recebidas por não confirmar pagamentos.",
+    )
+
+    banido = models.BooleanField(
+        default=False,
+        verbose_name="Conta banida",
+        help_text="Contas banidas não aparecem na busca de babás.",
+    )
+
+    banido_em = models.DateTimeField(
+        null=True,
+        blank=True,
+    )
+
     def __str__(self):
         return f"Perfil Babá - {self.usuario}"
 

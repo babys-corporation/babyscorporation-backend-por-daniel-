@@ -16,6 +16,14 @@ urllib3_cn.allowed_gai_family = allowed_gai_family
 # Carrega as variáveis de ambiente do arquivo .env
 load_dotenv()
 
+# Gateway de pagamento Pix (mock | celcoin)
+PIX_GATEWAY = os.getenv('PIX_GATEWAY', 'mock')
+PIX_CELCOIN_BASE_URL = os.getenv('PIX_CELCOIN_BASE_URL', 'https://sandbox.openfinance.celcoin.dev')
+PIX_CELCOIN_CLIENT_ID = os.getenv('PIX_CELCOIN_CLIENT_ID', '')
+PIX_CELCOIN_CLIENT_SECRET = os.getenv('PIX_CELCOIN_CLIENT_SECRET', '')
+# Chamadas recebidas não autenticadas aceitas (ex.: webhook da Celcoin)
+PIX_WEBHOOK_TOKEN = os.getenv('PIX_WEBHOOK_TOKEN', '')
+
 # variaveis do clodinary
 CLOUDINARY_STORAGE = {
     'CLOUD_NAME': os.getenv('CLOUDINARY_CLOUD_NAME'),
