@@ -40,7 +40,10 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # Segurança e configuração básica
 SECRET_KEY = os.getenv('SECRET_KEY', 'django-insecure')
 DEBUG = os.getenv('DEBUG', 'False') == 'True'
-ALLOWED_HOSTS = ['*']
+ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', '*').split(',') if os.getenv('ALLOWED_HOSTS') else ['*']
+
+# Confiar em cabeçalhos de proxy reverso quando atrás de HTTPS (comum no Dokku/Fabroku)
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 
 CSRF_TRUSTED_ORIGINS = [
     'http://localhost:3000',
@@ -48,12 +51,26 @@ CSRF_TRUSTED_ORIGINS = [
     'http://localhost:8000',
     'https://babycorpback-production.up.railway.app',
 ]
+# Permitir domínios adicionais via variável de ambiente (separados por vírgula)
+_extra_csrf = os.getenv('CSRF_TRUSTED_ORIGINS_EXTRA', '')
+if _extra_csrf:
+    for _origin in _extra_csrf.split(','):
+        _origin = _origin.strip()
+        if _origin and _origin not in CSRF_TRUSTED_ORIGINS:
+            CSRF_TRUSTED_ORIGINS.append(_origin)
 
 CORS_ALLOWED_ORIGINS = [
     'http://localhost:3000',
     'http://localhost:5173',
     'https://babycorporation-frontend.vercel.app',
 ]
+# Permitir origens adicionais via variável de ambiente (separados por vírgula)
+_extra_cors = os.getenv('CORS_ALLOWED_ORIGINS_EXTRA', '')
+if _extra_cors:
+    for _origin in _extra_cors.split(','):
+        _origin = _origin.strip()
+        if _origin and _origin not in CORS_ALLOWED_ORIGINS:
+            CORS_ALLOWED_ORIGINS.append(_origin)
 
 CORS_ALLOWED_ORIGIN_REGEXES = [
     r'^https://babycorporation-frontend\.vercel\.app$',
