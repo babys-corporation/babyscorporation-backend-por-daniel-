@@ -50,6 +50,7 @@ CSRF_TRUSTED_ORIGINS = [
     'http://localhost:5173',
     'http://localhost:8000',
     'https://babycorpback-production.up.railway.app',
+    'https://babycorporation-backend.class.fabricadesoftware.ifc.edu.br',
 ]
 # Permitir domínios adicionais via variável de ambiente (separados por vírgula)
 _extra_csrf = os.getenv('CSRF_TRUSTED_ORIGINS_EXTRA', '')
