@@ -1,12 +1,35 @@
 import os
 from datetime import timedelta
 from pathlib import Path
-
 import dj_database_url
 from dotenv import load_dotenv
+import socket
+import urllib3.util.connection as urllib3_cn
+
+
+def allowed_gai_family():
+    return socket.AF_INET
+
+
+urllib3_cn.allowed_gai_family = allowed_gai_family
 
 # Carrega as variáveis de ambiente do arquivo .env
 load_dotenv()
+
+# Gateway de pagamento Pix (mock | celcoin)
+PIX_GATEWAY = os.getenv('PIX_GATEWAY', 'mock')
+PIX_CELCOIN_BASE_URL = os.getenv('PIX_CELCOIN_BASE_URL', 'https://sandbox.openfinance.celcoin.dev')
+PIX_CELCOIN_CLIENT_ID = os.getenv('PIX_CELCOIN_CLIENT_ID', '')
+PIX_CELCOIN_CLIENT_SECRET = os.getenv('PIX_CELCOIN_CLIENT_SECRET', '')
+# Chamadas recebidas não autenticadas aceitas (ex.: webhook da Celcoin)
+PIX_WEBHOOK_TOKEN = os.getenv('PIX_WEBHOOK_TOKEN', '')
+
+# variaveis do clodinary
+CLOUDINARY_STORAGE = {
+    'CLOUD_NAME': os.getenv('CLOUDINARY_CLOUD_NAME'),
+    'API_KEY': os.getenv('CLOUDINARY_API_KEY'),
+    'API_SECRET': os.getenv('CLOUDINARY_API_SECRET'),
+}
 
 # Define o modo de execução da aplicação
 MODE = os.getenv('MODE')
@@ -16,13 +39,47 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 # Segurança e configuração básica
 SECRET_KEY = os.getenv('SECRET_KEY', 'django-insecure')
-DEBUG = os.getenv('DEBUG', 'False')
-ALLOWED_HOSTS = ['*']
+DEBUG = os.getenv('DEBUG', 'False') == 'True'
+ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', '*').split(',') if os.getenv('ALLOWED_HOSTS') else ['*']
+
+# Confiar em cabeçalhos de proxy reverso quando atrás de HTTPS (comum no Dokku/Fabroku)
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+
 CSRF_TRUSTED_ORIGINS = [
     'http://localhost:3000',
+    'http://localhost:5173',
     'http://localhost:8000',
+    'https://babycorpback-production.up.railway.app',
+    'https://babycorporation-backend.class.fabricadesoftware.ifc.edu.br',
 ]
-CORS_ALLOW_ALL_ORIGINS = True
+# Permitir domínios adicionais via variável de ambiente (separados por vírgula)
+_extra_csrf = os.getenv('CSRF_TRUSTED_ORIGINS_EXTRA', '')
+if _extra_csrf:
+    for _origin in _extra_csrf.split(','):
+        _origin = _origin.strip()
+        if _origin and _origin not in CSRF_TRUSTED_ORIGINS:
+            CSRF_TRUSTED_ORIGINS.append(_origin)
+
+CORS_ALLOWED_ORIGINS = [
+    'http://localhost:3000',
+    'http://localhost:5173',
+    'https://babycorporation-frontend.vercel.app',
+]
+# Permitir origens adicionais via variável de ambiente (separados por vírgula)
+_extra_cors = os.getenv('CORS_ALLOWED_ORIGINS_EXTRA', '')
+if _extra_cors:
+    for _origin in _extra_cors.split(','):
+        _origin = _origin.strip()
+        if _origin and _origin not in CORS_ALLOWED_ORIGINS:
+            CORS_ALLOWED_ORIGINS.append(_origin)
+
+CORS_ALLOWED_ORIGIN_REGEXES = [
+    r'^https://babycorporation-frontend\.vercel\.app$',
+    r'^https://babycorporation-frontend-[a-z0-9]+\.vercel\.app$',
+    r'^http://localhost:\d+$',
+]
+
+CORS_ALLOW_ALL_ORIGINS = False
 
 # Aplicações instaladas
 INSTALLED_APPS = [
@@ -117,9 +174,18 @@ MEDIA_ROOT = os.path.join(BASE_DIR, 'media/')
 FILE_UPLOAD_PERMISSIONS = 0o640
 
 # Configurações específicas para desenvolvimento, migração e produção
+# Só entra em modo DEVELOPMENT se a variável for EXATAMENTE 'DEVELOPMENT'.
+# Qualquer outro valor (incluindo ausência da variável) assume produção,
+# o que é mais seguro: prefira quebrar por falta de config em vez de
+# silenciosamente cair em modo dev e desativar o Cloudinary sem avisar.
 if MODE == 'DEVELOPMENT':
-    MEDIA_URL = 'http://localhost:8000//media/'
+    MEDIA_URL = 'http://localhost:8000/media/'
 else:
+    if MODE != 'PRODUCTION':
+        import warnings
+        warnings.warn(
+            f"MODE='{MODE}' não reconhecido; assumindo comportamento de PRODUCTION."
+        )
     MEDIA_URL = '/media/'
     CLOUDINARY_URL = os.getenv('CLOUDINARY_URL')
     STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
@@ -145,9 +211,13 @@ SPECTACULAR_SETTINGS = {
 # Modelo de usuário personalizado
 AUTH_USER_MODEL = 'core.Usuario'
 
+# Região padrão para validação de telefones (django-phonenumber-field)
+PHONE_NUMBER_DEFAULT_REGION = 'BR'
+
 # Configurações do Django REST Framework
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': ('rest_framework_simplejwt.authentication.JWTAuthentication',),
+    'DEFAULT_PERMISSION_CLASSES': ('rest_framework.permissions.IsAuthenticated',),
     'DEFAULT_PAGINATION_CLASS': 'app.pagination.CustomPagination',
     'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
     'PAGE_SIZE': 10,
@@ -159,8 +229,3 @@ SIMPLE_JWT = {
     'REFRESH_TOKEN_LIFETIME': timedelta(days=1),  # Tokens de atualização expiram em 1 dia
     'AUTH_HEADER_TYPES': ('Bearer',),
 }
-
-# Exibe as configurações principais para verificação
-print(f'{MODE = } \n{MEDIA_URL = } \n{DATABASES = }')
-
-

@@ -1,99 +1,238 @@
 import requests
 from django import forms
 from django.contrib import admin
-from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 from django.utils.translation import gettext_lazy as _
-from core.models import Usuario, PerfilPai, PerfilBaba, Agendamento, Crianca
-from core.models import Avaliacao
+from core.models import (
+    Usuario,
+    PerfilPai,
+    PerfilBaba,
+    Agendamento,
+    Crianca,
+    Avaliacao,
+)
+
+
+class PerfilBabaInline(admin.StackedInline):
+    model = PerfilBaba
+    can_delete = False
+    verbose_name_plural = "Perfil Babá"
+    extra = 0
+
+
+class PerfilPaiInline(admin.StackedInline):
+    model = PerfilPai
+    can_delete = False
+    verbose_name_plural = "Perfil Pai"
+    extra = 0
 
 
 class UsuarioAdminForm(forms.ModelForm):
     class Meta:
         model = Usuario
-        fields = '__all__'
+        fields = "__all__"
         widgets = {
-            'cpf': forms.TextInput(attrs={
-                'placeholder': '000.000.000-00',
-                'maxlength': '14',
-            }),
+            "cpf": forms.TextInput(
+                attrs={
+                    "placeholder": "000.000.000-00",
+                    "maxlength": "14",
+                }
+            ),
         }
 
 
 @admin.register(Usuario)
-class UsuarioAdmin(BaseUserAdmin):
+class UsuarioAdmin(admin.ModelAdmin):
     form = UsuarioAdminForm
-    ordering = ['id']
-    list_display = ['username', 'email', 'first_name', 'last_name', 'tipo', 'is_staff']
-    list_filter = ['tipo', 'is_staff', 'is_active']
+    ordering = ["id"]
+    list_display = [
+        "email",
+        "primeiro_nome",
+        "ultimo_nome",
+        "tipo",
+        "is_staff",
+    ]
+    list_filter = [
+        "tipo",
+        "is_staff",
+        "is_active",
+    ]
     fieldsets = (
-        (None, {'fields': ('username', 'password')}),
-        (_('Informações pessoais'), {'fields': ('first_name', 'last_name', 'email', 'cpf', 'tipo', 'foto', 'telefone')}),
-        (_('Localização'), {'fields': ('cep', 'cidade', 'bairro')}),
-        (_('Permissões'), {'fields': ('is_active', 'is_staff', 'is_superuser', 'groups', 'user_permissions')}),
-        (_('Datas importantes'), {'fields': ('last_login', 'date_joined')}),
+        (
+            None,
+            {
+                "fields": (
+                    "email",
+                    "password",
+                )
+            },
+        ),
+        (
+            _("Informações pessoais"),
+            {
+                "fields": (
+                    "primeiro_nome",
+                    "ultimo_nome",
+                    "cpf",
+                    "tipo",
+                    "foto",
+                    "telefone",
+                )
+            },
+        ),
+        (
+            _("Localização"),
+            {
+                "fields": (
+                    "cep",
+                    "cidade",
+                    "bairro",
+                )
+            },
+        ),
+        (
+            _("Permissões"),
+            {
+                "fields": (
+                    "is_active",
+                    "is_staff",
+                    "is_superuser",
+                    "groups",
+                    "user_permissions",
+                )
+            },
+        ),
+        (
+            _("Datas importantes"),
+            {
+                "fields": (
+                    "last_login",
+                    "date_joined",
+                )
+            },
+        ),
     )
-    readonly_fields = ['last_login', 'date_joined', 'cidade', 'bairro']
-    add_fieldsets = (
-        (None, {
-            'classes': ('wide',),
-            'fields': ('username', 'email', 'first_name', 'last_name', 'cpf', 'tipo', 'foto', 'telefone', 'cep', 'password1', 'password2', 'is_active', 'is_staff'),
-        }),
-    )
+    readonly_fields = [
+        "last_login",
+        "date_joined",
+        "cidade",
+        "bairro",
+    ]
+
+    def get_inline_instances(self, request, obj=None):
+        # Ao CRIAR um usuário (obj is None), não mostra nenhum inline.
+        # O signal em core/signals.py já cria o perfil certo
+        # automaticamente logo após o save — mostrar o inline aqui
+        # causaria uma tentativa de criação duplicada (IntegrityError).
+        if obj is None:
+            return []
+
+        # Ao EDITAR, mostra só o inline correspondente ao tipo do
+        # usuário, evitando expor/tentar salvar o perfil errado.
+        if obj.tipo == Usuario.TipoUsuario.BABA:
+            inline_classes = [PerfilBabaInline]
+        elif obj.tipo == Usuario.TipoUsuario.PAI:
+            inline_classes = [PerfilPaiInline]
+        else:
+            inline_classes = []
+
+        return [inline_class(self.model, self.admin_site) for inline_class in inline_classes]
 
     def save_model(self, request, obj, form, change):
         cep = obj.cep
         if cep:
-            cep_limpo = cep.replace('-', '').strip()
-            r = requests.get(f"https://viacep.com.br/ws/{cep_limpo}/json/")
-            dados = r.json()
-            if 'erro' not in dados:
-                obj.cidade = dados['localidade']
-                obj.bairro = dados['bairro']
+            cep_limpo = cep.replace("-", "").strip()
+
+            try:
+                r = requests.get(
+                    f"https://viacep.com.br/ws/{cep_limpo}/json/",
+                    timeout=5
+                )
+                r.raise_for_status()
+                dados = r.json()
+                if "erro" not in dados:
+                    obj.cidade = dados["localidade"]
+                    obj.bairro = dados["bairro"]
+            except requests.exceptions.RequestException:
+                # ViaCEP fora do ar ou sem conexão: segue o cadastro
+                # sem preencher cidade/bairro automaticamente
+                pass
         super().save_model(request, obj, form, change)
-        if not change:
-            if obj.tipo == Usuario.TipoUsuario.PAI:
-                PerfilPai.objects.get_or_create(usuario=obj)
-            elif obj.tipo == Usuario.TipoUsuario.BABA:
-                PerfilBaba.objects.get_or_create(usuario=obj)
 
 
 @admin.register(PerfilPai)
 class PerfilPaiAdmin(admin.ModelAdmin):
-    list_display = ['usuario', 'numero_filhos']
+    list_display = ["usuario", "numero_filhos"]
 
     def formfield_for_foreignkey(self, db_field, request, **kwargs):
-        if db_field.name == 'usuario':
-            kwargs['queryset'] = Usuario.objects.filter(tipo=Usuario.TipoUsuario.PAI)
-        return super().formfield_for_foreignkey(db_field, request, **kwargs)
+        if db_field.name == "usuario":
+            kwargs["queryset"] = Usuario.objects.filter(
+                tipo=Usuario.TipoUsuario.PAI
+            )
+        return super().formfield_for_foreignkey(
+            db_field,
+            request,
+            **kwargs,
+        )
 
 
 @admin.register(PerfilBaba)
 class PerfilBabaAdmin(admin.ModelAdmin):
-    list_display = ['usuario', 'experiencia_anos', 'disponivel', 'valor_hora']
+    list_display = [
+        "usuario",
+        "experiencia_anos",
+        "disponivel",
+        "valor_hora",
+    ]
 
     def formfield_for_foreignkey(self, db_field, request, **kwargs):
-        if db_field.name == 'usuario':
-            kwargs['queryset'] = Usuario.objects.filter(tipo=Usuario.TipoUsuario.BABA)
-        return super().formfield_for_foreignkey(db_field, request, **kwargs)
+        if db_field.name == "usuario":
+            kwargs["queryset"] = Usuario.objects.filter(
+                tipo=Usuario.TipoUsuario.BABA
+            )
+        return super().formfield_for_foreignkey(
+            db_field,
+            request,
+            **kwargs,
+        )
 
 
 @admin.register(Crianca)
 class CriancaAdmin(admin.ModelAdmin):
-    list_display = ['nome', 'genero', 'idade', 'perfil_pai']
+    list_display = [
+        "nome",
+        "genero",
+        "idade",
+        "perfil_pai",
+    ]
 
     def formfield_for_foreignkey(self, db_field, request, **kwargs):
-        if db_field.name == 'perfil_pai':
-            kwargs['queryset'] = PerfilPai.objects.all()
-        return super().formfield_for_foreignkey(db_field, request, **kwargs)
+        if db_field.name == "perfil_pai":
+            kwargs["queryset"] = PerfilPai.objects.all()
+        return super().formfield_for_foreignkey(
+            db_field,
+            request,
+            **kwargs,
+        )
 
 
 @admin.register(Agendamento)
 class AgendamentoAdmin(admin.ModelAdmin):
-    list_display = ['pai', 'baba', 'data', 'hora_inicio', 'hora_fim']
+    list_display = [
+        "pai",
+        "baba",
+        "data",
+        "hora_inicio",
+        "hora_fim",
+    ]
 
 
 @admin.register(Avaliacao)
 class AvaliacaoAdmin(admin.ModelAdmin):
-    list_display = ['pai', 'baba', 'estrelas', 'criado_em']
-    list_filter = ['estrelas']
-    ordering = ['-criado_em']
+    list_display = [
+        "pai",
+        "baba",
+        "estrelas",
+        "criado_em",
+    ]
+    list_filter = ["estrelas"]
+    ordering = ["-criado_em"]
