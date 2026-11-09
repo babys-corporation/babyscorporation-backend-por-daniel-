@@ -1,7 +1,7 @@
-from django.db.models.signals import post_save, post_delete
+from django.db.models.signals import post_delete, post_save
 from django.dispatch import receiver
 
-from core.models import Usuario, PerfilBaba, PerfilPai, PerfilBabaCompleta
+from core.models import PerfilBaba, PerfilBabaCompleta, PerfilPai, Usuario
 
 
 # ---------------------------------------------------------------------
@@ -36,7 +36,6 @@ def perfil_baba_esta_completo(perfil_baba: PerfilBaba) -> bool:
         usuario.cidade,
         usuario.bairro,
     ]
-    
 
     campos_perfil_obrigatorios = [
         perfil_baba.descricao,
@@ -44,10 +43,11 @@ def perfil_baba_esta_completo(perfil_baba: PerfilBaba) -> bool:
         perfil_baba.habilidades,
         perfil_baba.dtnasc,
         perfil_baba.formacao,
+        perfil_baba.chave_pix,
     ]
 
     return all(
-        valor is not None and str(valor).strip() != ""
+        valor is not None and str(valor).strip()
         for valor in (
             campos_usuario_obrigatorios + campos_perfil_obrigatorios
         )

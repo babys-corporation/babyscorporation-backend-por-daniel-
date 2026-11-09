@@ -1,9 +1,9 @@
 {
-  "experimentalServices": {
-    "web": {
-      "type": "web",
-      "entrypoint": "app/wsgi.py",
-      "routePrefix": "/"
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "buildCommand": "bash vercel_build.sh",
+  "functions": {
+    "app/wsgi.py": {
+      "maxDuration": 60
     }
   }
 }

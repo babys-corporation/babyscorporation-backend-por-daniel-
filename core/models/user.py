@@ -3,6 +3,7 @@ from django.core.exceptions import ValidationError
 from django.db import models
 from django_cpf_cnpj.fields import CPFField
 from phonenumber_field.modelfields import PhoneNumberField
+
 from uploader.models import Image
 
 
@@ -143,6 +144,22 @@ class PerfilPai(models.Model):
         return f"Perfil Pai - {self.usuario}"
 
 
+DIAS_SEMANA = [
+    "Segunda",
+    "Terça",
+    "Quarta",
+    "Quinta",
+    "Sexta",
+    "Sábado",
+    "Domingo",
+]
+
+
+def disponibilidade_padrao():
+    """Todos os dias disponíveis (mantém o comportamento das babás antigas)."""
+    return {dia: True for dia in DIAS_SEMANA}
+
+
 class PerfilBaba(models.Model):
     usuario = models.OneToOneField(
         Usuario,
@@ -163,6 +180,13 @@ class PerfilBaba(models.Model):
 
     disponivel = models.BooleanField(
         default=True,
+    )
+
+    # Dias da semana em que a babá aceita novos agendamentos
+    # (chaves de DIAS_SEMANA; segunda = índice 0, como date.weekday()).
+    disponibilidade = models.JSONField(
+        default=disponibilidade_padrao,
+        blank=True,
     )
 
     valor_hora = models.DecimalField(

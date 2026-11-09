@@ -1,10 +1,11 @@
 import os
+import socket
 from datetime import timedelta
 from pathlib import Path
+
 import dj_database_url
-from dotenv import load_dotenv
-import socket
 import urllib3.util.connection as urllib3_cn
+from dotenv import load_dotenv
 
 
 def allowed_gai_family():
@@ -42,15 +43,15 @@ SECRET_KEY = os.getenv('SECRET_KEY', 'django-insecure')
 DEBUG = os.getenv('DEBUG', 'False') == 'True'
 ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', '*').split(',') if os.getenv('ALLOWED_HOSTS') else ['*']
 
-# Confiar em cabeçalhos de proxy reverso quando atrás de HTTPS (comum no Dokku/Fabroku)
+# Confiar em cabeçalhos de proxy reverso quando atrás de HTTPS (Vercel/proxy)
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 
 CSRF_TRUSTED_ORIGINS = [
     'http://localhost:3000',
     'http://localhost:5173',
     'http://localhost:8000',
-    'https://babycorpback-production.up.railway.app',
-    'https://babycorporation-backend.class.fabricadesoftware.ifc.edu.br',
+    'http://127.0.0.1:5173',
+    'http://127.0.0.1:8000',
 ]
 # Permitir domínios adicionais via variável de ambiente (separados por vírgula)
 _extra_csrf = os.getenv('CSRF_TRUSTED_ORIGINS_EXTRA', '')
@@ -77,9 +78,10 @@ CORS_ALLOWED_ORIGIN_REGEXES = [
     r'^https://babycorporation-frontend\.vercel\.app$',
     r'^https://babycorporation-frontend-[a-z0-9]+\.vercel\.app$',
     r'^http://localhost:\d+$',
+    r'^http://127\.0\.0\.1:\d+$',
 ]
 
-CORS_ALLOW_ALL_ORIGINS = False
+CORS_ALLOW_ALL_ORIGINS = True
 
 # Aplicações instaladas
 INSTALLED_APPS = [

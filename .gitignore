@@ -172,3 +172,8 @@ poetry.toml
 
 # End of https://www.toptal.com/developers/gitignore/api/pythondb.sqlite3
 .vercel
+.env
+.env.*
+!.env.example
+staticfiles/
+uv.lock

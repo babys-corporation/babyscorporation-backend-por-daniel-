@@ -8,12 +8,12 @@ na conta da chave informada.
 
 from __future__ import annotations
 
-import struct
-
 CAMPO_GUI = "BR.GOV.BCB.PIX"
 CAMPO_CATEGORIA = "0000"  # Merchant Category Code (genérico)
 CAMPO_MOEDA = "986"  # BRL
 CAMPO_PAIS = "BR"
+VALOR_MINIMO = 0.01
+VALOR_MAXIMO = 999999999.99
 
 _CRC_TABLE = []
 
@@ -44,21 +44,19 @@ def _emv(campo_id: str, valor: str) -> str:
 
 def gerar_pix_estatico(
     chave: str,
-    valor: float,
+    valor: float | None,
     nome_recebedor: str = "BabyCorporation",
     cidade: str = "BRASIL",
     txid: str = "***",
 ) -> str:
-    """Monta o EMV (copia e cola) do Pix estático para a chave informada."""
-    chave = chave.strip()
-    valor = float(valor)
+    """Monta o EMV (copia e cola) do Pix estático para a chave informada.
 
-    if valor < 0.01 or valor > 999999999.99:
-        raise ValueError("Valor fora do intervalo permitido pelo Pix.")
+    Com ``valor=None`` o código sai sem valor fixo (o pagador digita o valor).
+    """
+    chave = chave.strip()
 
     nome = (nome_recebedor or "BabyCorporation").strip()[:25]
     cidade = (cidade or "BRASIL").strip()[:15]
-    valor_str = f"{valor:.2f}"
 
     # Campo 26: informações da chave (GUI + chave)
     mao = (
@@ -66,8 +64,13 @@ def gerar_pix_estatico(
         + _emv("01", chave)
     )
 
-    # Campo 54: valor
-    campo_valor = _emv("54", valor_str)
+    # Campo 54: valor (opcional)
+    campo_valor = ""
+    if valor is not None:
+        valor = float(valor)
+        if valor < VALOR_MINIMO or valor > VALOR_MAXIMO:
+            raise ValueError("Valor fora do intervalo permitido pelo Pix.")
+        campo_valor = _emv("54", f"{valor:.2f}")
 
     # Campo 62: dados adicionais (txid)
     txid = (txid or "***")[:25]

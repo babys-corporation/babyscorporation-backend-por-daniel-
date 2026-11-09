@@ -1,16 +1,18 @@
+import io
+from datetime import datetime
+from decimal import Decimal
+
+import qrcode
+from django.conf import settings
+from django.db import transaction
+from django.http import HttpResponse
+from django.utils import timezone
 from rest_framework.decorators import action
-from rest_framework.exceptions import NotFound, PermissionDenied, ValidationError
+from rest_framework.exceptions import PermissionDenied, ValidationError
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.viewsets import ModelViewSet
-
-import io
-
-import qrcode
-from django.conf import settings
-from django.http import HttpResponse
-from django.utils import timezone
 
 from core.models import Agendamento, PerfilPai
 from core.serializers import AgendamentoSerializer
@@ -25,10 +27,10 @@ class AgendamentoViewSet(ModelViewSet):
     def get_queryset(self):
         user = self.request.user
 
-        if user.tipo == "BABA":
+        if user.tipo == 'BABA':
             return Agendamento.objects.filter(baba__usuario=user)
 
-        if user.tipo == "PAI":
+        if user.tipo == 'PAI':
             return Agendamento.objects.filter(pai__usuario=user)
 
         return Agendamento.objects.none()
@@ -37,38 +39,54 @@ class AgendamentoViewSet(ModelViewSet):
         try:
             perfil_pai = PerfilPai.objects.get(usuario=self.request.user)
         except PerfilPai.DoesNotExist:
-            raise PermissionDenied(
-                {"detail": "Usuário precisa ter um perfil de pai para agendar."}
+            raise PermissionDenied({'detail': 'Usuário precisa ter um perfil de pai para agendar.'})
+
+        baba = serializer.validated_data['baba']
+
+        if baba.valor_hora is None:
+            raise ValidationError({'baba': 'A babá ainda não cadastrou o valor/hora.'})
+
+        if not (baba.chave_pix or '').strip():
+            raise ValidationError({'baba': 'A babá ainda não cadastrou uma chave Pix.'})
+
+        data = serializer.validated_data['data']
+        hora_inicio = serializer.validated_data['hora_inicio']
+        hora_fim = serializer.validated_data['hora_fim']
+
+        duracao = datetime.combine(data, hora_fim) - datetime.combine(data, hora_inicio)
+        horas = Decimal(duracao.total_seconds()) / Decimal(3600)
+        preco = (baba.valor_hora * horas).quantize(Decimal('0.01'))
+
+        with transaction.atomic():
+            agendamento = serializer.save(
+                pai=perfil_pai,
+                preco=preco,
+                qtd_criancas=serializer.validated_data.get('qtd_criancas', 1),
             )
 
-        serializer.save(
-            pai=perfil_pai,
-            qtd_criancas=serializer.validated_data.get("qtd_criancas", 1),
-        )
+            # O Pix (com o valor do atendimento) já sai junto com a solicitação.
+            # A babá aceita o agendamento depois de receber o pagamento.
+            _gerar_pix(agendamento)
+            agendamento.status_pagamento = Agendamento.StatusPagamento.AGUARDANDO
+            agendamento.save(update_fields=['status_pagamento', 'pix_brcode', 'pix_txid'])
 
     @action(detail=False, methods=['get'])
     def me(self, request):
         verificar_pagamentos_atrasados()
 
-        if request.user.tipo == "BABA":
-            queryset = Agendamento.objects.filter(
-                baba__usuario=request.user
-            )
+        if request.user.tipo == 'BABA':
+            queryset = Agendamento.objects.filter(baba__usuario=request.user)
 
         else:
-            queryset = Agendamento.objects.filter(
-                pai__usuario=request.user
-            )
+            queryset = Agendamento.objects.filter(pai__usuario=request.user)
 
         serializer = self.get_serializer(queryset, many=True)
 
         return Response(serializer.data)
 
     def _agendamento_da_baba(self, request, agendamento):
-        if request.user.tipo != "BABA" or agendamento.baba.usuario != request.user:
-            raise PermissionDenied(
-                {"detail": "Somente a babá deste agendamento pode responder."}
-            )
+        if request.user.tipo != 'BABA' or agendamento.baba.usuario != request.user:
+            raise PermissionDenied({'detail': 'Somente a babá deste agendamento pode responder.'})
 
     @action(detail=True, methods=['post'])
     def aceitar(self, request, pk=None):
@@ -77,25 +95,21 @@ class AgendamentoViewSet(ModelViewSet):
 
         if agendamento.status != Agendamento.Status.PENDENTE:
             return Response(
-                {"detail": "Somente agendamentos pendentes podem ser aceitos."},
+                {'detail': 'Somente agendamentos pendentes podem ser aceitos.'},
                 status=400,
             )
 
         agendamento.status = Agendamento.Status.ACEITO
 
-        chave_pix = agendamento.baba.chave_pix
-        if chave_pix:
-            nome = agendamento.baba.usuario.primeiro_nome or "Baba"
-            brcode = gerar_pix_estatico(
-                chave=chave_pix,
-                valor=float(agendamento.preco),
-                nome_recebedor=nome,
-                cidade=agendamento.baba.usuario.cidade or "BRASIL",
-                txid=f"BCORP{agendamento.id}",
-            )
+        if agendamento.pix_brcode and agendamento.status_pagamento == Agendamento.StatusPagamento.AGUARDANDO:
+            # Fluxo atual: a babá só aceita depois de receber o Pix,
+            # então aceitar também confirma o recebimento.
+            agendamento.status_pagamento = Agendamento.StatusPagamento.PAGO
+            agendamento.pagamento_confirmado_em = timezone.now()
+        elif (agendamento.baba.chave_pix or '').strip():
+            # Agendamentos antigos, criados antes do Pix sair na solicitação.
+            _gerar_pix(agendamento)
             agendamento.status_pagamento = Agendamento.StatusPagamento.AGUARDANDO
-            agendamento.pix_brcode = brcode
-            agendamento.pix_txid = f"BCORP{agendamento.id}"
         else:
             agendamento.status_pagamento = Agendamento.StatusPagamento.NAO_EXIGIDO
 
@@ -107,61 +121,54 @@ class AgendamentoViewSet(ModelViewSet):
     def pagamento(self, request, pk=None):
         agendamento = self.get_object()
 
-        if request.user.tipo == "BABA":
+        if request.user.tipo == 'BABA':
             if agendamento.baba.usuario != request.user:
-                raise PermissionDenied({"detail": "Nao e a sua babá."})
-        elif request.user.tipo == "PAI":
+                raise PermissionDenied({'detail': 'Nao e a sua babá.'})
+        elif request.user.tipo == 'PAI':
             if agendamento.pai.usuario != request.user:
-                raise PermissionDenied({"detail": "Nao e o seu agendamento."})
+                raise PermissionDenied({'detail': 'Nao e o seu agendamento.'})
         else:
-            raise PermissionDenied({"detail": "Usuário inválido."})
+            raise PermissionDenied({'detail': 'Usuário inválido.'})
 
-        if agendamento.status != Agendamento.Status.ACEITO:
+        if agendamento.status == Agendamento.Status.RECUSADO:
             return Response(
-                {"detail": "Somente agendamentos aceitos possuem cobrança."},
+                {'detail': 'Agendamentos recusados não possuem cobrança.'},
                 status=400,
             )
 
         if agendamento.status_pagamento == Agendamento.StatusPagamento.NAO_EXIGIDO:
-            return Response(
-                {
-                    "detail": "A babá ainda não cadastrou uma chave Pix para receber.",
-                    "status_pagamento": agendamento.status_pagamento,
-                }
-            )
+            return Response({
+                'detail': 'A babá ainda não cadastrou uma chave Pix para receber.',
+                'status_pagamento': agendamento.status_pagamento,
+            })
 
-        return Response(
-            {
-                "id": agendamento.id,
-                "preco": agendamento.preco,
-                "status_pagamento": agendamento.status_pagamento,
-                "pix_brcode": agendamento.pix_brcode,
-                "pix_txid": agendamento.pix_txid,
-            }
-        )
+        return Response({
+            'id': agendamento.id,
+            'preco': agendamento.preco,
+            'status_pagamento': agendamento.status_pagamento,
+            'pix_brcode': agendamento.pix_brcode,
+            'pix_txid': agendamento.pix_txid,
+        })
 
     @action(detail=True, methods=['get'])
     def pagamento_qrcode(self, request, pk=None):
         agendamento = self.get_object()
 
-        if agendamento.status != Agendamento.Status.ACEITO:
+        if agendamento.status == Agendamento.Status.RECUSADO:
             return Response(
-                {"detail": "Somente agendamentos aceitos possuem cobrança."},
+                {'detail': 'Agendamentos recusados não possuem cobrança.'},
                 status=400,
             )
 
-        if (
-            agendamento.status_pagamento == Agendamento.StatusPagamento.NAO_EXIGIDO
-            or not agendamento.pix_brcode
-        ):
+        if agendamento.status_pagamento == Agendamento.StatusPagamento.NAO_EXIGIDO or not agendamento.pix_brcode:
             return Response(
-                {"detail": "A babá ainda não cadastrou uma chave Pix."},
+                {'detail': 'A babá ainda não cadastrou uma chave Pix.'},
                 status=400,
             )
 
         return HttpResponse(
             _gerar_qrcode_png(agendamento.pix_brcode),
-            content_type="image/png",
+            content_type='image/png',
         )
 
     @action(detail=True, methods=['post'])
@@ -169,46 +176,22 @@ class AgendamentoViewSet(ModelViewSet):
         agendamento = self.get_object()
 
         if agendamento.pai.usuario != request.user:
-            raise PermissionDenied({"detail": "Somente o pai deste agendamento."})
+            raise PermissionDenied({'detail': 'Somente o pai deste agendamento.'})
 
-        if agendamento.status != Agendamento.Status.ACEITO:
+        if agendamento.status == Agendamento.Status.RECUSADO:
             return Response(
-                {"detail": "Somente agendamentos aceitos possuem cobrança."},
+                {'detail': 'Agendamentos recusados não possuem cobrança.'},
                 status=400,
             )
 
         if agendamento.status_pagamento != Agendamento.StatusPagamento.AGUARDANDO:
             return Response(
-                {"detail": "Este agendamento não está aguardando pagamento."},
+                {'detail': 'Este agendamento não está aguardando pagamento.'},
                 status=400,
             )
 
         agendamento.pagamento_marcado_em = timezone.now()
-        agendamento.save(update_fields=["pagamento_marcado_em"])
-
-        return Response(self.get_serializer(agendamento).data)
-
-    @action(detail=True, methods=['post'])
-    def marcar_pago(self, request, pk=None):
-        agendamento = self.get_object()
-
-        if agendamento.pai.usuario != request.user:
-            raise PermissionDenied({"detail": "Somente o pai deste agendamento."})
-
-        if agendamento.status != Agendamento.Status.ACEITO:
-            return Response(
-                {"detail": "Somente agendamentos aceitos possuem cobrança."},
-                status=400,
-            )
-
-        if agendamento.status_pagamento != Agendamento.StatusPagamento.AGUARDANDO:
-            return Response(
-                {"detail": "Este agendamento não está aguardando pagamento."},
-                status=400,
-            )
-
-        agendamento.pagamento_marcado_em = timezone.now()
-        agendamento.save(update_fields=["pagamento_marcado_em"])
+        agendamento.save(update_fields=['pagamento_marcado_em'])
 
         return Response(self.get_serializer(agendamento).data)
 
@@ -217,29 +200,29 @@ class AgendamentoViewSet(ModelViewSet):
         agendamento = self.get_object()
 
         if agendamento.baba.usuario != request.user:
-            raise PermissionDenied({"detail": "Somente a babá deste agendamento."})
+            raise PermissionDenied({'detail': 'Somente a babá deste agendamento.'})
 
         if agendamento.status != Agendamento.Status.ACEITO:
             return Response(
-                {"detail": "Somente agendamentos aceitos."},
+                {'detail': 'Somente agendamentos aceitos.'},
                 status=400,
             )
 
         if agendamento.status_pagamento != Agendamento.StatusPagamento.AGUARDANDO:
             return Response(
-                {"detail": "Este agendamento não está aguardando pagamento."},
+                {'detail': 'Este agendamento não está aguardando pagamento.'},
                 status=400,
             )
 
         if not agendamento.pagamento_marcado_em:
             return Response(
-                {"detail": "O pai ainda não marcou o Pix como pago."},
+                {'detail': 'O pai ainda não marcou o Pix como pago.'},
                 status=400,
             )
 
         agendamento.status_pagamento = Agendamento.StatusPagamento.PAGO
         agendamento.pagamento_confirmado_em = timezone.now()
-        agendamento.save(update_fields=["status_pagamento", "pagamento_confirmado_em"])
+        agendamento.save(update_fields=['status_pagamento', 'pagamento_confirmado_em'])
 
         return Response(self.get_serializer(agendamento).data)
 
@@ -250,7 +233,7 @@ class AgendamentoViewSet(ModelViewSet):
 
         if agendamento.status != Agendamento.Status.PENDENTE:
             return Response(
-                {"detail": "Somente agendamentos pendentes podem ser recusados."},
+                {'detail': 'Somente agendamentos pendentes podem ser recusados.'},
                 status=400,
             )
 
@@ -267,59 +250,65 @@ class CelcoinPixWebhookView(APIView):
 
     def post(self, request):
         payload = request.data or {}
-        token_recebido = (
-            request.headers.get("Authorization", "")
-            .replace("Bearer", "")
-            .strip()
-        )
-        token_cfg = getattr(settings, "PIX_WEBHOOK_TOKEN", "")
+        token_recebido = request.headers.get('Authorization', '').replace('Bearer', '').strip()
+        token_cfg = getattr(settings, 'PIX_WEBHOOK_TOKEN', '')
 
         if token_cfg and token_cfg != token_recebido:
-            return Response({"detail": "Token inválido."}, status=403)
+            return Response({'detail': 'Token inválido.'}, status=403)
 
-        entity = payload.get("entity")
-        status = payload.get("status")
-        body = payload.get("body", {}) or {}
+        entity = payload.get('entity')
+        status = payload.get('status')
+        body = payload.get('body', {}) or {}
 
-        if entity == "pix-payment-in" and status == "CONFIRMED":
-            txid = (
-                body.get("transactionIdentification")
-                or body.get("clientCode")
-                or ""
-            )
-            valor = float(body.get("amount", 0))
-
+        if entity == 'pix-payment-in' and status == 'CONFIRMED':
+            txid = body.get('transactionIdentification') or body.get('clientCode') or ''
             agendamento = None
 
             if txid:
-                agendamento = (
-                    Agendamento.objects.filter(
-                        pix_txid=txid,
-                        status=Agendamento.Status.ACEITO,
-                        status_pagamento=Agendamento.StatusPagamento.AGUARDANDO,
-                    )
-                    .first()
-                )
-
-            if agendamento is None:
-                agendamento = (
-                    Agendamento.objects.filter(
-                        status=Agendamento.Status.ACEITO,
-                        status_pagamento=Agendamento.StatusPagamento.AGUARDANDO,
-                    )
-                    .order_by("-criado_em")
-                    .first()
-                )
+                agendamento = Agendamento.objects.filter(
+                    pix_txid=txid,
+                    status_pagamento=Agendamento.StatusPagamento.AGUARDANDO,
+                ).exclude(status=Agendamento.Status.RECUSADO).first()
 
             if agendamento is not None:
                 agendamento.status_pagamento = Agendamento.StatusPagamento.PAGO
-                agendamento.save(update_fields=["status_pagamento"])
+                agendamento.pagamento_confirmado_em = timezone.now()
+                agendamento.save(
+                    update_fields=[
+                        'status_pagamento',
+                        'pagamento_confirmado_em',
+                    ]
+                )
 
-        return Response({"ok": True})
+        return Response({'ok': True})
 
 
 def _gerar_qrcode_png(conteudo: str) -> bytes:
     img = qrcode.make(conteudo)
     buffer = io.BytesIO()
-    img.save(buffer, format="PNG")
+    img.save(buffer, format='PNG')
     return buffer.getvalue()
+
+
+def _gerar_pix(agendamento: Agendamento) -> None:
+    """Preenche pix_brcode/pix_txid a partir da chave Pix da babá.
+
+    Tenta gerar o código já com o valor do atendimento; se não for possível,
+    gera só com a chave Pix (o pagador digita o valor no banco).
+    """
+    baba = agendamento.baba
+    txid = f'BCORP{agendamento.id}'
+    dados = {
+        'chave': baba.chave_pix,
+        'nome_recebedor': baba.usuario.primeiro_nome or 'Baba',
+        'cidade': baba.usuario.cidade or 'BRASIL',
+        'txid': txid,
+    }
+
+    try:
+        brcode = gerar_pix_estatico(valor=float(agendamento.preco), **dados)
+    except ValueError:
+        brcode = gerar_pix_estatico(valor=None, **dados)
+
+    agendamento.pix_brcode = brcode
+    agendamento.pix_txid = txid

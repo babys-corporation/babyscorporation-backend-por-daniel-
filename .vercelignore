@@ -1,0 +1,15 @@
+.venv
+.env
+.env.*
+db.sqlite3
+media
+staticfiles
+pyproject.toml
+pdm.lock
+pdm_build.py
+Dockerfile
+docker-compose.yml
+Procfile
+build.sh
+.vercel
+uv.lock

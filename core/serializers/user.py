@@ -1,24 +1,24 @@
-from rest_framework.serializers import (
-    ModelSerializer,
-    SlugRelatedField,
-)
-from rest_framework import serializers
-from rest_framework_simplejwt.tokens import RefreshToken
+import re
 
 from django.core.exceptions import ObjectDoesNotExist
 from django_cpf_cnpj.validators import is_valid_cpf
 from phonenumber_field.phonenumber import PhoneNumber
-import re
-
-from uploader.models import Image
-from uploader.serializers.image import ImageSerializer
+from rest_framework import serializers
+from rest_framework.serializers import (
+    ModelSerializer,
+    SlugRelatedField,
+)
+from rest_framework_simplejwt.tokens import RefreshToken
 
 from core.models import (
-    Usuario,
-    PerfilPai,
-    PerfilBaba,
     Crianca,
+    PerfilBaba,
+    PerfilPai,
+    Usuario,
 )
+from core.models.user import DIAS_SEMANA, disponibilidade_padrao
+from uploader.models import Image
+from uploader.serializers.image import ImageSerializer
 
 
 class UserRegistrationSerializer(ModelSerializer):
@@ -160,6 +160,12 @@ class UserRegistrationSerializer(ModelSerializer):
             },
         }
 
+    def validate_email(self, value):
+        if Usuario.objects.filter(email__iexact=value).exists():
+            raise serializers.ValidationError("E-mail já cadastrado.")
+
+        return value
+
     def validate_cpf(self, value):
         if not value:
             return None
@@ -183,7 +189,8 @@ class UserRegistrationSerializer(ModelSerializer):
             )
 
     def _limpar(self, value):
-        return value if value not in (None, "") else None
+        # != "" de propósito: 0 / Decimal("0") não devem virar None
+        return value if value is not None and value != "" else None  # noqa: PLC1901
 
     def create(self, validated_data):
         campos_perfil = {
@@ -296,6 +303,21 @@ class PerfilBabaSerializer(ModelSerializer):
         model = PerfilBaba
         fields = "__all__"
         read_only_fields = ["advertencias", "banido", "banido_em"]
+
+    def validate_disponibilidade(self, value):
+        if not isinstance(value, dict):
+            raise serializers.ValidationError("Envie os dias da semana com true/false.")
+
+        dias_invalidos = [dia for dia in value if dia not in DIAS_SEMANA]
+        if dias_invalidos:
+            raise serializers.ValidationError(f"Dias inválidos: {', '.join(dias_invalidos)}.")
+
+        if not all(isinstance(v, bool) for v in value.values()):
+            raise serializers.ValidationError("Cada dia deve ser true ou false.")
+
+        # Dias não enviados mantêm o valor atual
+        atual = getattr(self.instance, "disponibilidade", None) or disponibilidade_padrao()
+        return {dia: value.get(dia, atual.get(dia, True)) for dia in DIAS_SEMANA}
 
     def to_representation(self, instance):
         data = super().to_representation(instance)
