@@ -60,6 +60,9 @@ class UserRegistrationView(CreateAPIView):
     queryset = Usuario.objects.all()
     serializer_class = UserRegistrationSerializer
     permission_classes = [AllowAny]
+    # Cadastro é público: um token velho salvo no navegador não pode
+    # fazer o cadastro falhar com 401.
+    authentication_classes = []
 
 
 class PerfilPaiViewSet(ModelViewSet):

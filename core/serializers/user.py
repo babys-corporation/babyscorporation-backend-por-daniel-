@@ -161,6 +161,8 @@ class UserRegistrationSerializer(ModelSerializer):
         }
 
     def validate_email(self, value):
+        value = value.strip().lower()
+
         if Usuario.objects.filter(email__iexact=value).exists():
             raise serializers.ValidationError("E-mail já cadastrado.")
 

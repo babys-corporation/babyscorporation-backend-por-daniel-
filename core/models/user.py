@@ -8,6 +8,14 @@ from uploader.models import Image
 
 
 class UsuarioManager(BaseUserManager):
+    def get_by_natural_key(self, username):
+        # Login (JWT e admin) sem diferenciar maiúsculas: no celular o teclado
+        # costuma colocar a primeira letra do e-mail em maiúscula.
+        try:
+            return self.get(email__iexact=username)
+        except self.model.MultipleObjectsReturned:
+            return self.get(email=username)
+
     def create_user(self, email, password=None, **extra_fields):
         if not email:
             raise ValueError("O email é obrigatório.")
